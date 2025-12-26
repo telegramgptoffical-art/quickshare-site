@@ -1,1 +1,64 @@
-<!DOCTYPE html><html><body style="background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><div style="text-align:center;border:1px solid #00ff88;padding:20px;border-radius:10px;"><h2>LOGIN</h2><input type="text" id="u" placeholder="Username" style="display:block;margin:10px auto;padding:8px;"><input type="password" id="p" placeholder="Password" style="display:block;margin:10px auto;padding:8px;"><button onclick="if(localStorage.getItem('user_'+document.getElementById('u').value)===document.getElementById('p').value){localStorage.setItem('loggedUser', document.getElementById('u').value);window.location.href='../';}else{alert('Error');}" style="background:#00ff88;padding:10px;border:none;cursor:pointer;">LOGIN</button><p><a href="../signup" style="color:#00ff88">No account? Sign up</a></p></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QUICKSHARE - Login</title>
+    <style>
+        body { background: #020617; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #0f172a; padding: 30px; border-radius: 12px; border: 1px solid #334155; width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #00ff88; color: #020617; }
+        .error { color: #ff4444; font-size: 12px; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2 style="text-align:center; color:#00ff88;">Secure Entry</h2>
+    <input type="text" id="user" placeholder="Username">
+    <input type="password" id="pass" placeholder="Password">
+    <button class="btn" onclick="handleAuth('login')">Login</button>
+    <button class="btn" style="margin-top:10px; background:#3b82f6;" onclick="handleAuth('reg')">Register</button>
+    <div id="err" class="error"></div>
+</div>
+
+<script>
+    const MASTER_PASS = "gVj8L2k9qFmT4pD7sR6xN3cW5zB1hY0vG8tA9eJ4iK5oM3nQ2rU7wI1lX6yP0dS3aC9bH4jZ8V2fO5uE1pL9jR3kY7tG5mN0bV2cX6zF4wQ8uH9dS1iA0pK3lJ5oM2nC8rI4yW7xU6eB3vT9fZ";
+
+    function handleAuth(type) {
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value;
+        const err = document.getElementById('err');
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+
+        if (type === 'reg') {
+            // ПРОВЕРКА ЗАЩИТЫ АДМИНА
+            if (u.toLowerCase() === 'admin') {
+                if (p !== MASTER_PASS) {
+                    err.innerText = "Error: Admin account is protected!";
+                    return;
+                }
+            }
+            
+            if (users.find(x => x.user === u)) {
+                err.innerText = "User already exists!";
+                return;
+            }
+
+            users.push({ user: u, pass: p });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert("Registered successfully!");
+        }
+
+        // Логика входа
+        const found = users.find(x => x.user === u && x.pass === p);
+        if (found) {
+            localStorage.setItem('loggedUser', u);
+            location.href = '../';
+        } else {
+            err.innerText = "Invalid credentials!";
+        }
+    }
+</script>
+</body>
+</html>
