@@ -10,7 +10,7 @@
         .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; }
         #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
         header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 101; }
-        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 1px dashed var(--neon); }
+        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 1px dashed var(--neon); padding: 2px 5px; }
         .logout-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; font-weight: bold; }
         .container { max-width: 850px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
         textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
@@ -19,13 +19,13 @@
         .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
         
-        /* MODAL STATS */
-        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: left; min-width: 320px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
-        .stat-item { display: flex; justify-content: space-between; margin: 15px 0; border-bottom: 1px solid #1e293b; padding-bottom: 5px; }
-        .stat-val { color: var(--neon); font-weight: bold; }
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: left; min-width: 320px; box-shadow: 0 0 30px rgba(0,255,136,0.3); }
+        .stat-row { display: flex; justify-content: space-between; margin: 15px 0; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
+        .stat-label { color: #94a3b8; font-size: 14px; }
+        .stat-number { color: var(--neon); font-weight: bold; font-family: monospace; font-size: 18px; }
 
-        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; width: 100%; position: absolute; bottom: 0; }
     </style>
 </head>
 <body>
@@ -40,21 +40,21 @@
 
 <div id="statsModal" class="modal">
     <div class="modal-content">
-        <h2 style="color:var(--neon); margin-top:0; text-align:center;">Your Statistics 📊</h2>
-        <div class="stat-item"><span>User:</span> <span class="stat-val" id="st-name"></span></div>
-        <div class="stat-item"><span>Total Shares:</span> <span class="stat-val" id="st-shares">0</span></div>
-        <div class="stat-item"><span>Total Comments:</span> <span class="stat-val" id="st-comms">0</span></div>
-        <div class="stat-item"><span>Total Views:</span> <span class="stat-val" id="st-views">0</span></div>
-        <button class="btn-main" style="margin-top:10px;" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
+        <h2 style="color:var(--neon); margin:0 0 20px 0; text-align:center;">User Stats 📊</h2>
+        <div class="stat-row"><span class="stat-label">Username:</span> <span class="stat-number" id="s-user"></span></div>
+        <div class="stat-row"><span class="stat-label">Shares Created:</span> <span class="stat-number" id="s-total">0</span></div>
+        <div class="stat-row"><span class="stat-label">Total Comments:</span> <span class="stat-number" id="s-comms">0</span></div>
+        <div class="stat-row"><span class="stat-label">Total Visits:</span> <span class="stat-number" id="s-views">0</span></div>
+        <button class="btn-main" style="margin-top:15px;" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
     </div>
 </div>
 
 <div class="container" id="create-page">
     <div style="display:flex; gap:10px; margin-bottom:10px;">
         <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *" style="margin:0">
-        <label class="btn-upload">📁 Upload <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)"></label>
+        <label class="btn-upload">📁 Upload File <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)"></label>
     </div>
-    <textarea id="editor" placeholder="Content..."></textarea>
+    <textarea id="editor" placeholder="Type content here..."></textarea>
     <input type="text" id="share-desc" placeholder="Description (Optional)">
     <div class="settings-grid">
         <input type="password" id="share-pass" placeholder="Password (Optional)">
@@ -75,7 +75,7 @@
     window.onload = () => {
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = `<span class="user-link" onclick="updateAndShowStats()">${me} 🎄</span>
+            authDiv.innerHTML = `<span class="user-link" onclick="loadRealStats()">${me} 🎄</span>
                                  <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>`;
         } else {
             authDiv.innerHTML = '<button class="btn-main" style="width:auto; padding:8px 15px;" onclick="location.href=\'./login\'">LOGIN</button>';
@@ -83,23 +83,23 @@
         initSnow();
     };
 
-    function updateAndShowStats() {
-        // Загружаем данные из localStorage
-        const allShares = JSON.parse(localStorage.getItem('my_shares_db') || '[]');
-        const userShares = allShares.filter(s => s.author === me);
-        
-        let totalViews = 0;
-        let totalComms = 0;
-        
-        userShares.forEach(s => {
-            totalViews += (s.views || 0);
-            totalComms += (s.commentsCount || 0);
+    function loadRealStats() {
+        // Загружаем базу данных Share из localStorage
+        const db = JSON.parse(localStorage.getItem('qs_database') || '[]');
+        const myData = db.filter(item => item.author === me);
+
+        let totalVisits = 0;
+        let totalComments = 0;
+
+        myData.forEach(item => {
+            totalVisits += (item.views || 0);
+            totalComments += (item.commentsCount || 0);
         });
 
-        document.getElementById('st-name').innerText = me;
-        document.getElementById('st-shares').innerText = userShares.length;
-        document.getElementById('st-comms').innerText = totalComms;
-        document.getElementById('st-views').innerText = totalViews;
+        document.getElementById('s-user').innerText = me;
+        document.getElementById('s-total').innerText = myData.length;
+        document.getElementById('s-comms').innerText = totalComments;
+        document.getElementById('s-views').innerText = totalVisits;
         
         document.getElementById('statsModal').style.display = 'flex';
     }
@@ -107,12 +107,12 @@
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Title and Content required!");
+        if(!t || !c) return alert("Title/Content required!");
 
-        // Локальное сохранение для статистики
-        let db = JSON.parse(localStorage.getItem('my_shares_db') || '[]');
+        // Сохраняем в базу для статистики
+        let db = JSON.parse(localStorage.getItem('qs_database') || '[]');
         db.push({ author: me || 'Guest', title: t, ts: Date.now(), views: 0, commentsCount: 0 });
-        localStorage.setItem('my_shares_db', JSON.stringify(db));
+        localStorage.setItem('qs_database', JSON.stringify(db));
 
         const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
@@ -120,14 +120,14 @@
     }
 
     function secureLogout() {
-        const code = prompt("Enter 6-digit recovery code:");
+        const code = prompt("Enter 6-digit recovery code to logout:");
         if (!code) return;
         let users = JSON.parse(localStorage.getItem('users') || '[]');
         let userObj = users.find(x => x.user === me);
         if (userObj && userObj.recovery === code) {
             localStorage.removeItem('loggedUser');
             location.reload();
-        } else { alert("Invalid code!"); }
+        } else { alert("Wrong code!"); }
     }
 
     function initSnow() {
@@ -143,6 +143,17 @@
             p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; });
         }
         setInterval(draw, 30);
+    }
+
+    function handleFileUpload(input) {
+        const file = input.files[0];
+        if(!file) return;
+        document.getElementById('share-title').value = file.name;
+        const reader = new FileReader();
+        if(file.type.startsWith('text/')) {
+            reader.onload = (e) => document.getElementById('editor').value = e.target.result;
+            reader.readAsText(file);
+        }
     }
 </script>
 </body>
