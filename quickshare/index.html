@@ -2,119 +2,164 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickShare NY 2026</title>
+    <title>QuickShare NY 2026 - Pro Mode</title>
     <style>
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; }
-        body { background: radial-gradient(circle, #0a192f, var(--bg)); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; }
-        header { background: rgba(255,255,255,0.05); width: 100%; padding: 15px; text-align: center; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        .auth-btns { display: flex; gap: 10px; margin-right: 20px; }
-        .container { width: 95%; max-width: 900px; margin-top: 20px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; }
-        textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: monospace; }
-        .toolbar { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; }
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; transition: 0.3s; }
+        body { background: radial-gradient(circle, #0a192f, var(--bg)); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
+        header { background: rgba(0,0,0,0.4); padding: 15px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 20px; background: var(--card); border-radius: 15px; border: 1px solid #334155; }
+        textarea { width: 100%; height: 350px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: monospace; border-radius: 8px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 5px; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
         .btn-main { background: var(--neon); color: #020617; }
-        .btn-sec { background: #1e293b; color: white; border: 1px solid #334155; }
-        .history { margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px; }
-        .share-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; }
-        .status-guest { color: #aaa; font-size: 10px; border: 1px solid #555; padding: 2px 5px; border-radius: 3px; }
+        .btn-sec { background: #334155; color: white; }
+        .share-view { display: none; } /* Скрыто по умолчанию */
+        #login-warning { color: #ff4444; font-size: 12px; display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2 style="margin:0; color:var(--neon); font-size:18px; margin-left:20px;">❄️ QUICKSHARE</h2>
-    <div class="auth-btns" id="authSection">
-        </div>
+    <div style="color:var(--neon); font-weight:bold; font-size:22px;">❄️ QUICKSHARE PRO</div>
+    <div id="auth-box"></div>
 </header>
 
-<div class="container">
-    <textarea id="editor" placeholder="Start typing as a Guest..."></textarea>
+<div class="container" id="main-ui">
+    <input type="text" id="share-title" placeholder="Share Title (Required)" style="width: 100%; margin-bottom: 15px;">
     
-    <div class="toolbar">
-        <button class="btn btn-main" onclick="publishPaste()">🚀 PUBLISH (72H)</button>
-        <button class="btn btn-sec" onclick="copyText()">COPY</button>
-        <button class="btn btn-sec" onclick="clearEditor()">CLEAR</button>
+    <textarea id="editor" placeholder="Paste your code or text here..."></textarea>
+    
+    <div class="controls">
+        <input type="text" id="share-pass" placeholder="Password Protection (Optional)">
+        <input type="text" id="share-custom" placeholder="Custom URL (Logged in only)" id="custom-url-input">
+        <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
+        <button class="btn btn-sec" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
+        <button class="btn btn-main" onclick="generateShare()">🚀 Generate Share Link</button>
     </div>
+    <p id="login-warning">Login to use Custom URLs and Permanent Shares!</p>
+</div>
 
-    <div class="history">
-        <h3>My Recent Shares</h3>
-        <div id="historyList"></div>
+<div class="container share-view" id="view-ui">
+    <h2 id="view-title">Title</h2>
+    <textarea id="view-editor" readonly></textarea>
+    <div class="controls">
+        <button class="btn btn-sec" onclick="copyViewText()">📋 Copy</button>
+        <button class="btn btn-sec" onclick="downloadViewText()">💾 Download</button>
+        <button class="btn btn-main" onclick="location.href='./'">🆕 Create New</button>
     </div>
 </div>
 
 <script>
     const user = localStorage.getItem('loggedUser');
-    const authSection = document.getElementById('authSection');
+    const authBox = document.getElementById('auth-box');
 
-    // Настройка хедера (Login/Sign Up или Logout)
-    if (user) {
-        authSection.innerHTML = `<span style="margin-right:10px">Hi, ${user}</span><button class="btn btn-sec" onclick="logout()">LOGOUT</button>`;
+    // Настройка авторизации
+    if(user) {
+        authBox.innerHTML = `<span>${user}</span> | <button class="btn btn-sec" onclick="logout()">Logout</button>`;
     } else {
-        authSection.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">LOGIN</button>
-                                 <button class="btn btn-sec" onclick="location.href='./signup'">SIGN UP</button>`;
+        authBox.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">Login</button> <button class="btn btn-sec" onclick="location.href='./signup'">Sign Up</button>`;
+        document.getElementById('share-custom').disabled = true;
+        document.getElementById('login-warning').style.display = 'block';
     }
 
     function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
 
-    function publishPaste() {
-        const text = document.getElementById('editor').value;
-        if (!text.trim()) return alert("Empty text!");
-
-        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
-        const newPaste = {
-            id: Date.now(),
-            content: text.substring(0, 50) + "...",
-            fullContent: text,
-            timestamp: Date.now(),
-            isGuest: !user
-        };
-
-        pastes.push(newPaste);
-        localStorage.setItem('myPastes', JSON.stringify(pastes));
-        alert("Published! It will be saved for 72 hours.");
-        loadHistory();
-    }
-
-    function loadHistory() {
-        const list = document.getElementById('historyList');
-        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
-        const now = Date.now();
-        const limit = 72 * 3600 * 1000; // 72 часа
-
-        // Фильтруем старые пасты
-        const activePastes = pastes.filter(p => (now - p.timestamp) < limit);
-        localStorage.setItem('myPastes', JSON.stringify(activePastes));
-
-        list.innerHTML = activePastes.length ? '' : '<p style="color:#666">No shares yet.</p>';
+    // Работа с файлами
+    function handleFileUpload(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
         
-        activePastes.reverse().forEach(p => {
-            const date = new Date(p.timestamp).toLocaleString();
-            list.innerHTML += `
-                <div class="share-item">
-                    <div>
-                        <strong>${p.content}</strong><br>
-                        <small style="color:#666">${date} ${p.isGuest ? '<span class="status-guest">GUEST</span>' : ''}</small>
-                    </div>
-                    <button class="btn btn-sec" onclick="viewPaste(${p.id})">VIEW</button>
-                </div>
-            `;
-        });
-    }
-
-    function viewPaste(id) {
-        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
-        const p = pastes.find(item => item.id === id);
-        if (p) {
-            document.getElementById('editor').value = p.fullContent;
-            window.scrollTo(0,0);
+        // Если текст (или код)
+        if (file.type.match('text.*') || file.name.match(/\.(py|js|css|html|php|sh|json)$/)) {
+            reader.onload = (e) => document.getElementById('editor').value = e.target.result;
+            reader.readAsText(file);
+        } else {
+            // Если бинарный файл
+            document.getElementById('editor').value = "[BINARY FILE DETECTED: " + file.name + "]\nSize: " + file.size + " bytes.\n(Download link will be generated)";
         }
     }
 
-    function copyText() { navigator.clipboard.writeText(document.getElementById('editor').value); alert('Copied!'); }
-    function clearEditor() { document.getElementById('editor').value = ''; }
+    // Генерация Share
+    function generateShare() {
+        const title = document.getElementById('share-title').value;
+        const text = document.getElementById('editor').value;
+        const pass = document.getElementById('share-pass').value;
+        const custom = document.getElementById('share-custom').value;
 
-    loadHistory();
+        if(!title) return alert("Title is mandatory!");
+
+        // Кодируем данные в Base64 для передачи в URL
+        const data = {
+            t: title,
+            c: text,
+            p: pass,
+            ts: Date.now(),
+            g: !user
+        };
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        
+        // В реальности мы бы сохранили в базу, здесь просто имитируем
+        const finalUrl = window.location.origin + window.location.pathname + "?s=" + encoded + (custom ? "&path=" + custom : "");
+        
+        prompt("Your Share Link (Active for 72h for guests):", finalUrl);
+        
+        // Если есть аккаунт - сохраняем в историю
+        if(user) {
+            let history = JSON.parse(localStorage.getItem('user_shares_' + user) || '[]');
+            history.push({title, url: finalUrl});
+            localStorage.setItem('user_shares_' + user, JSON.stringify(history));
+        }
+    }
+
+    // Логика просмотра (если есть параметр ?s= в URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.has('s')) {
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('view-ui').style.display = 'block';
+        
+        try {
+            const rawData = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
+            
+            // Проверка пароля
+            if(rawData.p) {
+                let attempts = 0;
+                let access = false;
+                while(attempts < 3) {
+                    let p = prompt("This share is protected. Enter password:");
+                    if(p === rawData.p) { access = true; break; }
+                    attempts++;
+                    alert("Wrong! " + (3-attempts) + " attempts left.");
+                }
+                if(!access) {
+                    alert("Locked.");
+                    location.href = './';
+                }
+            }
+
+            // Проверка 72 часов для гостей
+            if(rawData.g && (Date.now() - rawData.ts > 72*3600*1000)) {
+                alert("This Guest share has expired (72h limit).");
+                location.href = './';
+            }
+
+            document.getElementById('view-title').innerText = rawData.t;
+            document.getElementById('view-editor').value = rawData.c;
+        } catch(e) { alert("Invalid Share Link"); }
+    }
+
+    function copyViewText() {
+        navigator.clipboard.writeText(document.getElementById('view-editor').value);
+        alert("Copied!");
+    }
+
+    function downloadViewText() {
+        const blob = new Blob([document.getElementById('view-editor').value], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.download = document.getElementById('view-title').innerText + ".txt";
+        a.href = URL.createObjectURL(blob);
+        a.click();
+    }
 </script>
 </body>
 </html>
