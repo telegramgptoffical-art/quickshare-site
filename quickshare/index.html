@@ -3,96 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickShare PRO - Restricted Guest Mode</title>
+    <title>QUICKSHARE</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --gray: #475569; }
-        body { background: radial-gradient(circle, #0a192f, var(--bg)); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; padding-bottom: 50px; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Новогодние эффекты (только для залогиненных) */
+        .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617); }
+        .snow { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; display: none; }
+        .garland { position: fixed; top: 0; width: 100%; height: 10px; background: linear-gradient(90deg, #ff0000 25%, #00ff00 25%, #00ff00 50%, #0000ff 50%, #0000ff 75%, #ffff00 75%); background-size: 50px 100%; animation: flash 1s infinite linear; display: none; z-index: 1000; }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
         header { background: rgba(0,0,0,0.6); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; backdrop-filter: blur(10px); }
-        .container { max-width: 900px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 15px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .container { max-width: 900px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 15px; border: 1px solid #334155; position: relative; z-index: 10; }
         textarea { width: 100%; height: 300px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: 'Consolas', monospace; border-radius: 8px; outline: none; }
         .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; outline: none; }
-        input:disabled { opacity: 0.5; cursor: not-allowed; background: #0f172a; border-color: #1e293b; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 11px; }
+        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
         .btn-main { background: var(--neon); color: #020617; }
         .btn-sec { background: #334155; color: white; }
-        .btn:disabled { background: #1e293b; color: var(--gray); cursor: not-allowed; border: 1px solid #334155; }
-        .lock-hint { font-size: 10px; color: #facc15; display: block; margin-top: -10px; margin-bottom: 10px; }
-        .history-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .share-card { background: #1e293b; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--neon); }
-        .tag-pill { background: rgba(0,255,136,0.1); color: var(--neon); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 5px; border: 1px solid var(--neon); }
-        .share-view { display: none; }
+        
+        /* Капча */
+        #captcha-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .captcha-btn { width: 150px; height: 150px; border-radius: 50%; border: 5px solid var(--neon); background: transparent; color: var(--neon); font-weight: bold; cursor: pointer; user-select: none; transition: 0.1s; }
+        .captcha-btn:active { background: rgba(0,255,136,0.2); transform: scale(0.95); }
+        .progress-bar { width: 200px; height: 10px; background: #1e293b; margin-top: 20px; border-radius: 5px; overflow: hidden; }
+        #progress-fill { width: 0%; height: 100%; background: var(--neon); transition: 0.1s; }
     </style>
 </head>
-<body>
+<body id="body-tag">
+
+<div class="garland" id="garland"></div>
+<canvas class="snow" id="snow-canvas"></canvas>
 
 <header>
-    <div style="color:var(--neon); font-weight:bold; font-size:20px; cursor:pointer" onclick="location.href='./'">❄️ QUICKSHARE PRO</div>
+    <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href='./'">❄️ QUICKSHARE</div>
     <div id="auth-box"></div>
 </header>
+
+<div id="captcha-overlay">
+    <h2>ShareCaptcha Protection</h2>
+    <p>Hold the button for 5 seconds to unlock</p>
+    <button class="captcha-btn" id="captcha-trigger">HOLD TO<br>VERIFY</button>
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+</div>
 
 <div class="container" id="main-ui">
     <div class="grid-inputs">
         <input type="text" id="share-title" placeholder="Title *">
-        <input type="text" id="share-tags" placeholder="Tags (comma separated)">
+        <label id="captcha-toggle-wrap" style="display:none; align-items:center; gap:10px;">
+            <input type="checkbox" id="use-captcha"> Enable ShareCaptcha
+        </label>
     </div>
     
-    <textarea id="editor" placeholder="Write something..."></textarea>
+    <textarea id="editor" placeholder="Write or paste content..."></textarea>
     
     <div class="grid-inputs" style="margin-top:20px;">
-        <div>
-            <input type="password" id="share-pass" placeholder="Password (Users Only)" style="width:100%; box-sizing:border-box;">
-            <span id="pass-hint" class="lock-hint" style="display:none">⚠️ Login to enable password</span>
-        </div>
-        <div>
-            <button class="btn btn-sec" id="btn-upload" style="width:100%" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
-            <span id="file-hint" class="lock-hint" style="display:none">⚠️ Login to upload files</span>
-            <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
-        </div>
-    </div>
-    
-    <button class="btn btn-main" style="width:100%" onclick="generateShare()">🚀 Publish Share</button>
-
-    <div style="margin-top:40px;">
-        <h3>My Recent Shares</h3>
-        <div id="historyList" class="history-list"></div>
+        <button class="btn btn-sec" id="btn-upload" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
+        <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
+        <button class="btn btn-main" onclick="generateShare()">🚀 Publish</button>
     </div>
 </div>
 
-<div class="container share-view" id="view-ui">
+<div class="container" id="view-ui" style="display:none">
     <h2 id="view-title" style="color:var(--neon)"></h2>
     <textarea id="view-editor" readonly></textarea>
     <div class="grid-inputs" style="margin-top:15px;">
         <button class="btn btn-sec" onclick="copyViewText()">📋 Copy</button>
-        <button class="btn btn-sec" onclick="downloadViewText()">💾 Download</button>
-        <button class="btn btn-main" onclick="location.href='./'">🆕 New</button>
+        <button class="btn btn-main" onclick="location.href='./'">🆕 Create New</button>
     </div>
 </div>
 
 <script>
     const user = localStorage.getItem('loggedUser');
-    const authBox = document.getElementById('auth-box');
-    const passInput = document.getElementById('share-pass');
-    const uploadBtn = document.getElementById('btn-upload');
+    const isAuth = !!user;
 
-    // Настройка доступа
-    if(user) {
-        authBox.innerHTML = `<span>${user}</span> | <button class="btn btn-sec" onclick="logout()">Logout</button>`;
+    // Включаем новогодние фишки
+    if(isAuth) {
+        document.getElementById('body-tag').classList.add('logged-in-bg');
+        document.getElementById('garland').style.display = 'block';
+        document.getElementById('captcha-toggle-wrap').style.display = 'flex';
+        // Тут можно добавить скрипт снега, если нужно
     } else {
-        authBox.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">Login</button>`;
-        
-        // Ограничения для гостей
-        passInput.disabled = true;
-        document.getElementById('pass-hint').style.display = 'block';
-        
-        uploadBtn.disabled = true;
-        document.getElementById('file-hint').style.display = 'block';
+        document.getElementById('btn-upload').disabled = true;
+        document.getElementById('btn-upload').innerText = "📂 Upload (Login required)";
     }
 
-    function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
+    document.getElementById('auth-box').innerHTML = isAuth ? 
+        `<span>${user}</span> | <button class="btn btn-sec" onclick="localStorage.removeItem('loggedUser');location.reload()">Logout</button>` :
+        `<button class="btn btn-sec" onclick="location.href='./login'">Login</button>`;
 
     function handleFileUpload(input) {
-        if(!user) return;
+        if(!isAuth) return;
         const file = input.files[0];
         const reader = new FileReader();
         reader.onload = (e) => { 
@@ -110,56 +112,63 @@
         const data = {
             t: title,
             c: text,
-            p: user ? document.getElementById('share-pass').value : '',
-            ts: Date.now(),
-            u: user || 'Guest'
+            captcha: isAuth && document.getElementById('use-captcha').checked,
+            ts: Date.now()
         };
 
         const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         const link = window.location.origin + window.location.pathname + "?s=" + encoded;
-
-        let history = JSON.parse(localStorage.getItem('qs_history') || '[]');
-        history.push({ ...data, url: link });
-        localStorage.setItem('qs_history', JSON.stringify(history));
-
-        prompt("Share Link:", link);
-        loadHistory();
+        prompt("Your Share Link:", link);
     }
 
-    function loadHistory() {
-        const list = document.getElementById('historyList');
-        const history = JSON.parse(localStorage.getItem('qs_history') || '[]');
-        list.innerHTML = '';
-        history.slice().reverse().forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'share-card';
-            card.innerHTML = `<div>${item.t}</div> <button class="btn btn-sec" onclick="location.href='${item.url}'">Open</button>`;
-            list.appendChild(card);
-        });
-    }
+    // Логика ShareCaptcha
+    let captchaTimer;
+    let progress = 0;
+    const trigger = document.getElementById('captcha-trigger');
+    const fill = document.getElementById('progress-fill');
 
-    // Обработка ссылки (View Mode)
-    const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.has('s')) {
-        document.getElementById('main-ui').style.display = 'none';
-        document.getElementById('view-ui').style.display = 'block';
-        const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
+    function startCaptcha(data) {
+        document.getElementById('captcha-overlay').style.display = 'flex';
         
-        if(data.p) {
-            if(prompt("Password:") !== data.p) { alert("Wrong!"); location.href='./'; }
-        }
+        trigger.onmousedown = trigger.ontouchstart = () => {
+            captchaTimer = setInterval(() => {
+                progress += 2;
+                fill.style.width = progress + "%";
+                if(progress >= 100) {
+                    clearInterval(captchaTimer);
+                    document.getElementById('captcha-overlay').style.display = 'none';
+                    showShare(data);
+                }
+            }, 100);
+        };
+
+        window.onmouseup = window.ontouchend = () => {
+            clearInterval(captchaTimer);
+            progress = 0;
+            fill.style.width = "0%";
+        };
+    }
+
+    function showShare(data) {
+        document.getElementById('view-ui').style.display = 'block';
         document.getElementById('view-title').innerText = data.t;
         document.getElementById('view-editor').value = data.c;
     }
 
-    function copyViewText() { navigator.clipboard.writeText(document.getElementById('view-editor').value); alert("Copied!"); }
-    function downloadViewText() {
-        const blob = new Blob([document.getElementById('view-editor').value], {type: 'text/plain'});
-        const a = document.createElement('a');
-        a.download = "share.txt"; a.href = URL.createObjectURL(blob); a.click();
+    // Обработка ссылки
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.has('s')) {
+        document.getElementById('main-ui').style.display = 'none';
+        const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
+        
+        if(data.captcha) {
+            startCaptcha(data);
+        } else {
+            showShare(data);
+        }
     }
 
-    loadHistory();
+    function copyViewText() { navigator.clipboard.writeText(document.getElementById('view-editor').value); alert("Copied!"); }
 </script>
 </body>
 </html>
