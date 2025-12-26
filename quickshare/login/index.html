@@ -2,28 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QUICKSHARE - Login</title>
+    <title>QUICKSHARE - Secure Entry</title>
     <style>
-        body { background: #020617; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #0f172a; padding: 30px; border-radius: 12px; border: 1px solid #334155; width: 300px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: #00ff88; color: #020617; }
-        .error { color: #ff4444; font-size: 12px; text-align: center; margin-top: 10px; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; text-align: center; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--neon); color: #020617; transition: 0.3s; margin-top: 5px; }
+        .btn:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+        .error { color: #ff4444; font-size: 13px; margin: 10px 0; min-height: 18px; }
+        .link { color: #3b82f6; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; }
+        .step { display: none; }
+        .active { display: block; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
-    <h2 style="text-align:center; color:#00ff88;">Secure Entry</h2>
-    <input type="text" id="user" placeholder="Username">
-    <input type="password" id="pass" placeholder="Password">
-    <button class="btn" onclick="handleAuth('login')">Login</button>
-    <button class="btn" style="margin-top:10px; background:#3b82f6;" onclick="handleAuth('reg')">Register</button>
+    <h2 id="title" style="color:var(--neon); margin-bottom: 20px;">QUICKSHARE</h2>
+    
+    <div id="step-auth" class="step active">
+        <input type="text" id="user" placeholder="Username">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn" onclick="handleAuth('login')">LOGIN</button>
+        <button class="btn" style="background:#3b82f6; color:white; margin-top:10px;" onclick="handleAuth('reg')">REGISTER</button>
+        <span class="link" onclick="showStep('step-forgot')">Forgot Password?</span>
+    </div>
+
+    <div id="step-recovery-set" class="step">
+        <p style="font-size: 13px;">Type the 6-digit code that will be used to restore your account.</p>
+        <input type="text" id="reg-code" maxlength="6" placeholder="000000">
+        <button class="btn" onclick="finalizeRegistration()">COMPLETE</button>
+    </div>
+
+    <div id="step-forgot" class="step">
+        <p style="font-size: 13px;">Type the 6-digit code you typed to sign-up a new account.</p>
+        <input type="text" id="recovery-user" placeholder="Your Username" style="margin-bottom:0px;">
+        <input type="text" id="recovery-code" maxlength="6" placeholder="Enter 6-digit code">
+        <button class="btn" id="restore-btn" onclick="restoreAccount()">RESTORE ACCESS</button>
+        <span class="link" onclick="showStep('step-auth')">Back to Login</span>
+    </div>
+
     <div id="err" class="error"></div>
 </div>
 
 <script>
-    const MASTER_PASS = "gVj8L2k9qFmT4pD7sR6xN3cW5zB1hY0vG8tA9eJ4iK5oM3nQ2rU7wI1lX6yP0dS3aC9bH4jZ8V2fO5uE1pL9jR3kY7tG5mN0bV2cX6zF4wQ8uH9dS1iA0pK3lJ5oM2nC8rI4yW7xU6eB3vT9fZ";
+    let tempUser = null;
+    let tempPass = null;
+
+    function showStep(id) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('err').innerText = "";
+    }
 
     function handleAuth(type) {
         const u = document.getElementById('user').value.trim();
@@ -32,33 +63,86 @@
         let users = JSON.parse(localStorage.getItem('users') || '[]');
 
         if (type === 'reg') {
-            // ПРОВЕРКА ЗАЩИТЫ АДМИНА
-            if (u.toLowerCase() === 'admin') {
-                if (p !== MASTER_PASS) {
-                    err.innerText = "Error: Admin account is protected!";
-                    return;
-                }
-            }
-            
             if (users.find(x => x.user === u)) {
-                err.innerText = "User already exists!";
+                err.innerText = "Account exists!";
                 return;
             }
-
-            users.push({ user: u, pass: p });
-            localStorage.setItem('users', JSON.stringify(users));
-            alert("Registered successfully!");
-        }
-
-        // Логика входа
-        const found = users.find(x => x.user === u && x.pass === p);
-        if (found) {
-            localStorage.setItem('loggedUser', u);
-            location.href = '../';
+            if (u.length < 3) { err.innerText = "Name too short!"; return; }
+            tempUser = u;
+            tempPass = p;
+            showStep('step-recovery-set');
         } else {
-            err.innerText = "Invalid credentials!";
+            const found = users.find(x => x.user === u && x.pass === p);
+            if (found) {
+                localStorage.setItem('loggedUser', u);
+                location.href = '../';
+            } else {
+                err.innerText = "Invalid credentials!";
+            }
         }
     }
+
+    function finalizeRegistration() {
+        const code = document.getElementById('reg-code').value;
+        if (code.length !== 6 || isNaN(code)) {
+            document.getElementById('err').innerText = "Code must be 6 digits!";
+            return;
+        }
+
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        users.push({ user: tempUser, pass: tempPass, recovery: code });
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        localStorage.setItem('loggedUser', tempUser);
+        alert("Account created! Welcome.");
+        location.href = '../';
+    }
+
+    function restoreAccount() {
+        const u = document.getElementById('recovery-user').value.trim();
+        const code = document.getElementById('recovery-code').value;
+        const err = document.getElementById('err');
+        const btn = document.getElementById('restore-btn');
+
+        // Проверка блокировки
+        const lockTime = localStorage.getItem('lock_' + u);
+        if (lockTime && Date.now() < lockTime) {
+            const remaining = Math.ceil((lockTime - Date.now()) / 1000);
+            err.innerText = "Locked! Wait " + remaining + "s";
+            return;
+        }
+
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        let userObj = users.find(x => x.user === u);
+
+        if (userObj && userObj.recovery === code) {
+            localStorage.setItem('loggedUser', u);
+            localStorage.removeItem('attempts_' + u);
+            alert("Identity verified! Logged in.");
+            location.href = '../';
+        } else {
+            let attempts = (parseInt(localStorage.getItem('attempts_' + u)) || 0) + 1;
+            localStorage.setItem('attempts_' + u, attempts);
+            
+            if (attempts >= 3) {
+                const lockUntil = Date.now() + (2 * 60 * 1000); // 2 минуты
+                localStorage.setItem('lock_' + u, lockUntil);
+                err.innerText = "Too many attempts! Locked for 2 min.";
+                btn.disabled = true;
+                setTimeout(() => { btn.disabled = false; }, 120000);
+            } else {
+                err.innerText = "Invalid code! Attempt " + attempts + "/3";
+            }
+        }
+    }
+
+    // Проверка блокировки при загрузке
+    window.onload = () => {
+        const u = document.getElementById('recovery-user').value;
+        if (localStorage.getItem('lock_' + u) > Date.now()) {
+            document.getElementById('restore-btn').disabled = true;
+        }
+    };
 </script>
 </body>
 </html>
