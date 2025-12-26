@@ -5,170 +5,250 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QUICKSHARE</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
-        /* Новогодние эффекты (только для залогиненных) */
-        .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617); }
-        .snow { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 999; display: none; }
-        .garland { position: fixed; top: 0; width: 100%; height: 10px; background: linear-gradient(90deg, #ff0000 25%, #00ff00 25%, #00ff00 50%, #0000ff 50%, #0000ff 75%, #ffff00 75%); background-size: 50px 100%; animation: flash 1s infinite linear; display: none; z-index: 1000; }
-        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        #snow-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1; display: none; }
+        .garland { position: fixed; top: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #f00 25%, #0f0 25%, #0f0 50%, #00f 50%, #00f 75%, #ff0 75%); background-size: 40px 100%; animation: flash 1s infinite linear; display: none; z-index: 1000; }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        header { background: rgba(0,0,0,0.6); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; backdrop-filter: blur(10px); }
-        .container { max-width: 900px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 15px; border: 1px solid #334155; position: relative; z-index: 10; }
-        textarea { width: 100%; height: 300px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: 'Consolas', monospace; border-radius: 8px; outline: none; }
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
+        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: sticky; top: 0; z-index: 100; }
+        .main-content { flex: 1; }
+        .container { max-width: 900px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 15px; border: 1px solid #334155; position: relative; z-index: 10; }
+        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: monospace; border-radius: 8px; outline: none; }
+        
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        input, select { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; }
+        
+        .btn { padding: 12px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 11px; }
         .btn-main { background: var(--neon); color: #020617; }
         .btn-sec { background: #334155; color: white; }
+        .btn-danger { background: var(--red); color: white; }
+
+        /* QUICKCAPTCHA */
+        #captcha-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .monster-btn { font-size: 50px; background: none; border: none; cursor: pointer; transition: 0.1s; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .shake { animation: shake 0.2s !important; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(5px); } 50% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+        .hp-bar { width: 200px; height: 20px; background: #333; border: 2px solid white; margin: 10px; border-radius: 10px; overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: var(--red); transition: 0.2s; }
         
-        /* Капча */
-        #captcha-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .captcha-btn { width: 150px; height: 150px; border-radius: 50%; border: 5px solid var(--neon); background: transparent; color: var(--neon); font-weight: bold; cursor: pointer; user-select: none; transition: 0.1s; }
-        .captcha-btn:active { background: rgba(0,255,136,0.2); transform: scale(0.95); }
-        .progress-bar { width: 200px; height: 10px; background: #1e293b; margin-top: 20px; border-radius: 5px; overflow: hidden; }
-        #progress-fill { width: 0%; height: 100%; background: var(--neon); transition: 0.1s; }
+        .hold-btn { width: 150px; height: 150px; border-radius: 50%; border: 8px solid var(--neon); background: none; color: var(--neon); font-weight: bold; display: none; outline: none; }
+        .feedback-btns { display: none; gap: 20px; margin-top: 20px; }
+
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 12px; margin-top: auto; }
     </style>
 </head>
 <body id="body-tag">
 
 <div class="garland" id="garland"></div>
-<canvas class="snow" id="snow-canvas"></canvas>
+<canvas id="snow-canvas"></canvas>
 
 <header>
-    <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href='./'">❄️ QUICKSHARE</div>
+    <div style="color:var(--neon); font-weight:bold; font-size:24px; cursor:pointer" onclick="location.href='./'">❄️ QUICKSHARE</div>
     <div id="auth-box"></div>
 </header>
 
 <div id="captcha-overlay">
-    <h2>ShareCaptcha Protection</h2>
-    <p>Hold the button for 5 seconds to unlock</p>
-    <button class="captcha-btn" id="captcha-trigger">HOLD TO<br>VERIFY</button>
-    <div class="progress-bar"><div id="progress-fill"></div></div>
+    <div id="step-monster">
+        <h2 style="color:var(--red)">DEFEAT THE MONSTER!</h2>
+        <button class="monster-btn" id="monster" onclick="hitMonster()">👾</button>
+        <div class="hp-bar"><div id="hp-fill"></div></div>
+        <p id="hp-text">100 / 100 HP</p>
+    </div>
+
+    <div id="step-hold" style="display:none">
+        <h2 style="color:var(--neon)">STAY STRONG!</h2>
+        <p>Hold the button for 5 seconds</p>
+        <button class="hold-btn" id="hold-trigger">HOLD</button>
+        <div class="hp-bar" style="border-color:var(--neon)"><div id="hold-fill" style="width:0%; background:var(--neon)"></div></div>
+    </div>
+
+    <div id="step-feedback" style="display:none">
+        <h2>Did you like our QuickCaptcha?</h2>
+        <div class="feedback-btns" id="f-btns" style="display:flex">
+            <button class="btn btn-main" onclick="finishCaptcha(true)">YES</button>
+            <button class="btn btn-danger" onclick="finishCaptcha(false)">NO</button>
+        </div>
+        <h3 id="final-msg" style="margin-top:20px; display:none"></h3>
+    </div>
 </div>
 
-<div class="container" id="main-ui">
-    <div class="grid-inputs">
-        <input type="text" id="share-title" placeholder="Title *">
-        <label id="captcha-toggle-wrap" style="display:none; align-items:center; gap:10px;">
-            <input type="checkbox" id="use-captcha"> Enable ShareCaptcha
-        </label>
+<div class="main-content">
+    <div class="container" id="main-ui">
+        <div class="grid-inputs">
+            <input type="text" id="share-title" placeholder="Title *">
+            <input type="text" id="share-tags" placeholder="Tags (comma separated)">
+        </div>
+        <textarea id="editor" placeholder="Write or paste your content here..."></textarea>
+        
+        <div id="auth-features" style="display:none; margin-top:15px;">
+            <div class="grid-inputs">
+                <input type="password" id="share-pass" placeholder="Set Password">
+                <select id="share-expiry">
+                    <option value="0">Life: Permanent</option>
+                    <option value="24">Expire in 24 Hours</option>
+                    <option value="72">Expire in 72 Hours (3 Days)</option>
+                </select>
+            </div>
+            <label style="display:flex; align-items:center; gap:10px; font-size:12px; margin-bottom:15px; cursor:pointer;">
+                <input type="checkbox" id="use-captcha"> Enable Monster QuickCaptcha
+            </label>
+        </div>
+
+        <div class="grid-inputs">
+            <button class="btn btn-sec" id="btn-upload" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
+            <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
+            <button class="btn btn-main" onclick="generateShare()">🚀 Publish</button>
+        </div>
     </div>
-    
-    <textarea id="editor" placeholder="Write or paste content..."></textarea>
-    
-    <div class="grid-inputs" style="margin-top:20px;">
-        <button class="btn btn-sec" id="btn-upload" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
-        <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
-        <button class="btn btn-main" onclick="generateShare()">🚀 Publish</button>
+
+    <div class="container" id="view-ui" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+            <h2 id="view-title" style="color:var(--neon)"></h2>
+            <div id="owner-tools" style="display:none; gap:5px;">
+                <button class="btn btn-sec" onclick="editShare()">Edit</button>
+                <button class="btn btn-danger" onclick="deleteShare()">Delete</button>
+            </div>
+        </div>
+        <div id="view-tags" style="margin-bottom:10px;"></div>
+        <textarea id="view-editor" readonly></textarea>
+        <div class="grid-inputs" style="margin-top:15px;">
+            <button class="btn btn-sec" onclick="copyText()">Copy</button>
+            <button class="btn btn-sec" onclick="downloadText()">Download</button>
+            <button class="btn btn-main" onclick="location.href='./'">New</button>
+        </div>
     </div>
 </div>
 
-<div class="container" id="view-ui" style="display:none">
-    <h2 id="view-title" style="color:var(--neon)"></h2>
-    <textarea id="view-editor" readonly></textarea>
-    <div class="grid-inputs" style="margin-top:15px;">
-        <button class="btn btn-sec" onclick="copyViewText()">📋 Copy</button>
-        <button class="btn btn-main" onclick="location.href='./'">🆕 Create New</button>
-    </div>
-</div>
+<footer>
+    Made by GitHub Pages!
+</footer>
 
 <script>
     const user = localStorage.getItem('loggedUser');
     const isAuth = !!user;
 
-    // Включаем новогодние фишки
     if(isAuth) {
         document.getElementById('body-tag').classList.add('logged-in-bg');
         document.getElementById('garland').style.display = 'block';
-        document.getElementById('captcha-toggle-wrap').style.display = 'flex';
-        // Тут можно добавить скрипт снега, если нужно
+        document.getElementById('auth-features').style.display = 'block';
+        initSnow();
     } else {
         document.getElementById('btn-upload').disabled = true;
-        document.getElementById('btn-upload').innerText = "📂 Upload (Login required)";
     }
 
     document.getElementById('auth-box').innerHTML = isAuth ? 
-        `<span>${user}</span> | <button class="btn btn-sec" onclick="localStorage.removeItem('loggedUser');location.reload()">Logout</button>` :
+        `${user} | <button class="btn btn-sec" onclick="localStorage.removeItem('loggedUser');location.reload()">Exit</button>` :
         `<button class="btn btn-sec" onclick="location.href='./login'">Login</button>`;
-
-    function handleFileUpload(input) {
-        if(!isAuth) return;
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => { 
-            document.getElementById('editor').value = e.target.result;
-            document.getElementById('share-title').value = file.name;
-        };
-        reader.readAsText(file);
-    }
 
     function generateShare() {
         const title = document.getElementById('share-title').value;
         const text = document.getElementById('editor').value;
-        if(!title) return alert("Title required!");
+        if(!title) return alert("Title is required!");
 
         const data = {
             t: title,
             c: text,
+            tags: document.getElementById('share-tags').value.split(',').map(t => t.trim()).filter(t => t),
+            p: isAuth ? document.getElementById('share-pass').value : '',
+            expiry: isAuth ? document.getElementById('share-expiry').value : 72,
             captcha: isAuth && document.getElementById('use-captcha').checked,
-            ts: Date.now()
+            ts: Date.now(),
+            u: user || 'Guest',
+            id: Math.random().toString(36).substr(2, 9)
         };
 
-        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        const link = window.location.origin + window.location.pathname + "?s=" + encoded;
+        const link = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         prompt("Your Share Link:", link);
     }
 
-    // Логика ShareCaptcha
-    let captchaTimer;
-    let progress = 0;
-    const trigger = document.getElementById('captcha-trigger');
-    const fill = document.getElementById('progress-fill');
-
-    function startCaptcha(data) {
-        document.getElementById('captcha-overlay').style.display = 'flex';
-        
-        trigger.onmousedown = trigger.ontouchstart = () => {
-            captchaTimer = setInterval(() => {
-                progress += 2;
-                fill.style.width = progress + "%";
-                if(progress >= 100) {
-                    clearInterval(captchaTimer);
-                    document.getElementById('captcha-overlay').style.display = 'none';
-                    showShare(data);
-                }
-            }, 100);
-        };
-
-        window.onmouseup = window.ontouchend = () => {
-            clearInterval(captchaTimer);
-            progress = 0;
-            fill.style.width = "0%";
-        };
+    // --- QUICKCAPTCHA ---
+    let monsterHP = 100;
+    function hitMonster() {
+        monsterHP -= 10;
+        document.getElementById('hp-fill').style.width = monsterHP + "%";
+        document.getElementById('hp-text').innerText = monsterHP + " / 100 HP";
+        document.getElementById('monster').classList.add('shake');
+        setTimeout(() => document.getElementById('monster').classList.remove('shake'), 200);
+        if(monsterHP <= 0) {
+            document.getElementById('step-monster').style.display = 'none';
+            document.getElementById('step-hold').style.display = 'block';
+            document.getElementById('hold-trigger').style.display = 'block';
+        }
     }
 
-    function showShare(data) {
+    let holdTimer, holdProg = 0;
+    const holdBtn = document.getElementById('hold-trigger');
+    holdBtn.onmousedown = holdBtn.ontouchstart = () => {
+        holdTimer = setInterval(() => {
+            holdProg += 2;
+            document.getElementById('hold-fill').style.width = holdProg + "%";
+            if(holdProg >= 100) {
+                clearInterval(holdTimer);
+                document.getElementById('step-hold').style.display = 'none';
+                document.getElementById('step-feedback').style.display = 'block';
+            }
+        }, 100);
+    };
+    window.onmouseup = window.ontouchend = () => { clearInterval(holdTimer); holdProg = 0; document.getElementById('hold-fill').style.width = "0%"; };
+
+    function finishCaptcha(liked) {
+        const msg = document.getElementById('final-msg');
+        document.getElementById('f-btns').style.display = 'none';
+        msg.style.display = 'block';
+        if(liked) {
+            msg.innerText = "Thank You! ❤️";
+        } else {
+            msg.innerText = "Sorry! We are trying to upgrade our QuickCaptcha to give the best quality.";
+        }
+        setTimeout(() => {
+            document.getElementById('captcha-overlay').style.display = 'none';
+            renderView(window.pendingData);
+        }, 3000);
+    }
+
+    // --- RENDER VIEW ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.has('s')) {
+        const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
+        window.pendingData = data;
+        document.getElementById('main-ui').style.display = 'none';
+
+        if(data.expiry > 0 && (Date.now() - data.ts > data.expiry * 3600000)) {
+            alert("This share has expired.");
+            location.href = './';
+        } else if(data.captcha) {
+            document.getElementById('captcha-overlay').style.display = 'flex';
+        } else {
+            renderView(data);
+        }
+    }
+
+    function renderView(data) {
         document.getElementById('view-ui').style.display = 'block';
         document.getElementById('view-title').innerText = data.t;
         document.getElementById('view-editor').value = data.c;
     }
 
-    // Обработка ссылки
-    const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.has('s')) {
-        document.getElementById('main-ui').style.display = 'none';
-        const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
-        
-        if(data.captcha) {
-            startCaptcha(data);
-        } else {
-            showShare(data);
+    function initSnow() {
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.display = 'block';
+        let W = window.innerWidth, H = window.innerHeight;
+        canvas.width = W; canvas.height = H;
+        let flakes = Array.from({length: 80}, () => ({x: Math.random()*W, y: Math.random()*H, r: Math.random()*3+1, d: Math.random()*1}));
+        function draw() {
+            ctx.clearRect(0, 0, W, H); ctx.fillStyle = "white"; ctx.beginPath();
+            flakes.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true); });
+            ctx.fill();
+            flakes.forEach(f => { f.y += f.d + 1; if(f.y > H) f.y = -10; });
+            requestAnimationFrame(draw);
         }
+        draw();
     }
-
-    function copyViewText() { navigator.clipboard.writeText(document.getElementById('view-editor').value); alert("Copied!"); }
 </script>
 </body>
 </html>
