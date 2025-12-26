@@ -9,10 +9,7 @@
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
-        #snow-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1; display: none; }
-        .garland { position: absolute; top: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #f00 25%, #0f0 25%, #0f0 50%, #00f 50%, #00f 75%, #ff0 75%); background-size: 40px 100%; animation: flash 1s infinite linear; display: none; z-index: 1001; }
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
+        /* Search Zone */
         .search-area { background: rgba(0,0,0,0.3); padding: 8px; text-align: center; border-bottom: 1px solid #1e293b; }
         .search-container { display: inline-flex; gap: 8px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--neon); }
         .search-input { background: none; border: none; color: white; width: 180px; outline: none; font-size: 13px; }
@@ -30,19 +27,34 @@
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
         .btn-sec { background: var(--border); color: white; }
         
+        /* Фикс для QuickCaptcha в одну строку */
+        .captcha-wrapper { display: flex; align-items: center; height: 100%; }
+        .captcha-label { 
+            display: inline-flex; 
+            align-items: center; 
+            cursor: pointer; 
+            white-space: nowrap; /* Запрет переноса текста */
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .captcha-label input[type="checkbox"] { 
+            width: 16px; 
+            height: 16px; 
+            margin: 0 8px 0 0; /* Отступ справа от чекбокса */
+            cursor: pointer;
+        }
+
         .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
         .stat-item { background: var(--input-bg); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .stat-val { font-size: 20px; font-weight: bold; color: var(--neon); display: block; }
-        .stat-lbl { font-size: 10px; color: #94a3b8; }
-
-        .guest-banner { background: var(--blue); color: white; padding: 10px; text-align: center; font-weight: bold; display: none; position: sticky; top: 0; z-index: 2000; }
+        
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body id="body-tag">
 
-<div id="guest-mode-ui" class="guest-banner">
-    GUEST VIEW MODE ACTIVE | <button class="btn btn-sec" style="padding:4px 10px; font-size:10px; display:inline-flex;" onclick="location.reload()">Back to my account!</button>
+<div id="guest-mode-ui" class="guest-banner" style="background: var(--blue); color: white; padding: 10px; text-align: center; font-weight: bold; display: none; position: sticky; top: 0; z-index: 2000;">
+    GUEST VIEW MODE ACTIVE | <button class="btn btn-sec" style="padding:4px 10px; font-size:10px; display:inline-flex; border:1px solid white;" onclick="location.reload()">Back to my account!</button>
 </div>
 
 <div class="search-area" id="search-zone">
@@ -73,9 +85,12 @@
                     <option value="0">Life: Permanent</option>
                     <option value="24">Life: 24 Hours</option>
                 </select>
-                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
-                    <input type="checkbox" id="captcha-in"> Enable QuickCaptcha
-                </label>
+                <div class="captcha-wrapper">
+                    <label class="captcha-label">
+                        <input type="checkbox" id="captcha-in">
+                        QuickCaptcha
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -91,13 +106,11 @@
             <h1 id="p-user-name"></h1>
             <div id="guest-trigger" style="color:var(--blue); font-size:13px; cursor:pointer; text-decoration:underline; margin-bottom:15px;" onclick="showAsGuest()">You can see how Guests see your profile!</div>
         </div>
-        
         <div class="stats-row">
-            <div class="stat-item"><span class="stat-val" id="s-count">0</span><span class="stat-lbl">Shares</span></div>
-            <div class="stat-item"><span class="stat-val" id="s-comm">0</span><span class="stat-lbl">Comments</span></div>
-            <div class="stat-item"><span class="stat-val" id="s-view">0</span><span class="stat-lbl">Views</span></div>
+            <div class="stat-item"><span class="stat-val" id="s-count">0</span><span style="font-size:10px;color:#94a3b8">Shares</span></div>
+            <div class="stat-item"><span class="stat-val" id="s-comm">0</span><span style="font-size:10px;color:#94a3b8">Comments</span></div>
+            <div class="stat-item"><span class="stat-val" id="s-view">0</span><span style="font-size:10px;color:#94a3b8">Views</span></div>
         </div>
-
         <h3>User Publications</h3>
         <div id="p-list"></div>
     </div>
@@ -135,7 +148,6 @@
         
         const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
         const mine = all.filter(s => s.u === me);
-        
         document.getElementById('s-count').innerText = mine.length;
         document.getElementById('s-comm').innerText = mine.length * 5;
         document.getElementById('s-view').innerText = mine.length * 120;
@@ -145,7 +157,7 @@
         mine.forEach(s => {
             list.innerHTML += `<div style="background:#1e293b; padding:12px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid var(--neon);">
                 <span>${s.t}</span>
-                <button class="btn btn-main" style="width:auto; padding:5px 10px" onclick="location.href='${s.url}'">OPEN</button>
+                <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="location.href='${s.url}'">OPEN</button>
             </div>`;
         });
     }
@@ -156,28 +168,14 @@
         document.getElementById('guest-trigger').style.display = 'none';
     }
 
-    function saveShare() {
-        const t = document.getElementById('share-title').value;
-        if(!t) return alert("Title required!");
-        const data = { t, c: document.getElementById('editor').value, u: me || 'Guest', tags: document.getElementById('tags-in').value.split(','), ts: Date.now() };
-        const url = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        let all = JSON.parse(localStorage.getItem('global_shares') || '[]');
-        all.push({...data, url});
-        localStorage.setItem('global_shares', JSON.stringify(all));
-        alert("Published!");
-        location.reload();
-    }
-
     function doSearch(q) {
         q = q.trim().toLowerCase();
         const sPage = document.getElementById('search-page');
         const cPage = document.getElementById('create-page');
         const pPage = document.getElementById('profile-page');
         if(!q) { sPage.style.display='none'; cPage.style.display='block'; pPage.style.display='none'; return; }
-        
         const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
         let found = all.filter(i => i.t.toLowerCase().includes(q));
-
         if(found.length) {
             cPage.style.display='none'; pPage.style.display='none'; sPage.style.display='block';
             const list = document.getElementById('s-list');
@@ -192,6 +190,18 @@
             document.getElementById('search-error').style.opacity = '1';
             setTimeout(() => document.getElementById('search-error').style.opacity = '0', 2000);
         }
+    }
+
+    function saveShare() {
+        const t = document.getElementById('share-title').value;
+        if(!t) return alert("Title required!");
+        const data = { t, c: document.getElementById('editor').value, u: me || 'Guest', tags: [], ts: Date.now() };
+        const url = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        let all = JSON.parse(localStorage.getItem('global_shares') || '[]');
+        all.push({...data, url});
+        localStorage.setItem('global_shares', JSON.stringify(all));
+        alert("Published!");
+        location.reload();
     }
 </script>
 </body>
