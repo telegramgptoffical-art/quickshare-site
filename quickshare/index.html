@@ -6,47 +6,50 @@
     <title>QUICKSHARE</title>
     <style>
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; --gold: #ffd700; --blue: #3b82f6; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
-        /* SNOW & GARLAND */
         #snow-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1; display: none; }
         .garland { position: absolute; top: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #f00 25%, #0f0 25%, #0f0 50%, #00f 50%, #00f 75%, #ff0 75%); background-size: 40px 100%; animation: flash 1s infinite linear; display: none; z-index: 1001; }
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        /* COMPACT SEARCH AT THE TOP (CEILING) */
-        .top-search-zone { background: rgba(0,0,0,0.3); padding: 8px; text-align: center; border-bottom: 1px solid #1e293b; }
-        .search-bar-inner { display: inline-flex; gap: 10px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--neon); }
-        .search-bar-inner input { background: none; border: none; color: white; width: 180px; outline: none; font-size: 13px; }
-        .search-msg { color: var(--red); font-size: 11px; margin-top: 4px; height: 14px; opacity: 0; transition: 0.3s; font-weight: bold; }
+        .search-area { background: rgba(0,0,0,0.3); padding: 8px; text-align: center; border-bottom: 1px solid #1e293b; }
+        .search-container { display: inline-flex; gap: 8px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--neon); }
+        .search-input { background: none; border: none; color: white; width: 180px; outline: none; font-size: 13px; }
+        .search-err { color: var(--red); font-size: 11px; margin-top: 4px; height: 14px; opacity: 0; transition: 0.3s; }
 
         header { background: rgba(0,0,0,0.8); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
-        .main-content { flex: 1; padding: 15px; }
-        .container { max-width: 800px; margin: 0 auto 20px; padding: 20px; background: var(--card); border-radius: 12px; border: 1px solid #334155; position: relative; z-index: 10; }
+        .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid #334155; position: relative; z-index: 10; }
         
-        /* EDITOR & SETTINGS */
-        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; font-family: monospace; box-sizing: border-box; }
-        .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-        input, select { background: #1e293b; border: 1px solid #334155; color: white; padding: 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
         
         .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
         .btn-sec { background: #334155; color: white; }
         
-        .admin-glow { color: var(--gold); margin-left: 5px; text-shadow: 0 0 8px var(--gold); }
-        .share-item { background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--neon); }
-        
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .stat-item { background: #1e293b; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-val { font-size: 20px; font-weight: bold; color: var(--neon); display: block; }
+        .stat-lbl { font-size: 10px; color: #94a3b8; }
+
+        .guest-banner { background: var(--blue); color: white; padding: 10px; text-align: center; font-weight: bold; display: none; position: sticky; top: 0; z-index: 2000; }
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body id="body-tag">
 
-<div class="top-search-zone">
-    <div class="search-bar-inner">
-        <input type="text" id="globalSearch" placeholder="Search shares..." oninput="processSearch(this.value)">
-        <button id="modeSwitcher" class="btn btn-sec" style="padding:4px 10px; border-radius:15px; font-size:9px;" onclick="switchMode()">TITLE NAME</button>
+<div id="guest-mode-ui" class="guest-banner">
+    GUEST VIEW MODE ACTIVE | <button class="btn btn-sec" style="padding:4px 10px; font-size:10px;" onclick="location.reload()">Back to my account!</button>
+</div>
+
+<div class="search-area" id="search-zone">
+    <div class="search-container">
+        <input type="text" id="globalSearch" placeholder="Search shares..." oninput="doSearch(this.value)">
+        <button id="modeBtn" class="btn btn-sec" style="padding:4px 10px; border-radius:15px; font-size:9px;" onclick="swapMode()">TITLE NAME</button>
     </div>
-    <div id="search-error" class="search-msg">Nothing found!</div>
+    <div id="search-error" class="search-err">Nothing found!</div>
 </div>
 
 <div class="garland" id="garland"></div>
@@ -54,141 +57,138 @@
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.reload()">❄️ QUICKSHARE</div>
-    <div id="user-display"></div>
+    <div id="auth-info"></div>
 </header>
 
-<div class="main-content">
-    <div class="container" id="editor-page">
-        <input type="text" id="share-title" placeholder="Filename / Title *" style="margin-bottom:12px">
-        <textarea id="editor" placeholder="Write or paste your content here..."></textarea>
+<div id="page-content">
+    <div class="container" id="create-page">
+        <input type="text" id="share-title" placeholder="Filename / Title *" style="width:100%; padding:10px; margin-bottom:12px; background:#1e293b; border:1px solid #334155; color:white; border-radius:6px;">
+        <textarea id="editor" placeholder="Write something..."></textarea>
         
-        <div id="registered-options" style="display:none;">
-            <div class="settings-row">
-                <input type="text" id="share-tags" placeholder="Tags (comma separated)">
-                <input type="password" id="share-pass" placeholder="Set Password (Optional)">
+        <div id="auth-options" style="display:none;">
+            <div class="grid">
+                <input type="text" id="tags-in" placeholder="Tags (comma separated)">
+                <input type="password" id="pass-in" placeholder="Password">
             </div>
-            <div class="settings-row">
-                <select id="share-life">
-                    <option value="0">Life: Permanent</option>
-                    <option value="24">Expire in 24 Hours</option>
-                </select>
-                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer">
-                    <input type="checkbox" id="use-captcha"> Enable ShareCaptcha
-                </label>
+            <div class="grid">
+                <select id="life-in"><option value="0">Permanent</option><option value="24">24 Hours</option></select>
+                <label style="display:flex; align-items:center; gap:8px; font-size:12px;"><input type="checkbox" id="captcha-in"> Captcha</label>
             </div>
         </div>
 
-        <div class="settings-row">
-            <button class="btn btn-sec" onclick="document.getElementById('f-upload').click()">📂 Upload File</button>
-            <input type="file" id="f-upload" style="display:none" onchange="readLocalFile(this)">
-            <button class="btn btn-main" onclick="finalizePublish()">🚀 Publish</button>
+        <div class="grid">
+            <button class="btn btn-sec" onclick="document.getElementById('f-up').click()">📂 Upload</button>
+            <input type="file" id="f-up" style="display:none" onchange="loadFile(this)">
+            <button class="btn btn-main" onclick="saveShare()">🚀 Publish</button>
         </div>
-    </div>
-
-    <div class="container" id="results-page" style="display:none">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <h3 style="color:var(--neon); margin:0">Results</h3>
-            <button class="btn btn-sec" style="padding:4px 10px" onclick="location.reload()">Close</button>
-        </div>
-        <div id="results-list"></div>
     </div>
 
     <div class="container" id="profile-page" style="display:none">
-        <h2 id="profile-title" style="text-align:center"></h2>
-        <div id="profile-stats" style="text-align:center; color:var(--blue); font-size:12px; cursor:pointer; margin-bottom:15px" onclick="alert('Guest mode active!')">You can see how Guests see your profile!</div>
-        <div id="user-shares-box"></div>
+        <div style="text-align:center">
+            <h1 id="p-user-name"></h1>
+            <div id="guest-trigger" style="color:var(--blue); font-size:13px; cursor:pointer; text-decoration:underline; margin-bottom:15px;" onclick="showAsGuest()">You can see how Guests see your profile!</div>
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-item"><span class="stat-val" id="s-count">0</span><span class="stat-lbl">Shares</span></div>
+            <div class="stat-item"><span class="stat-val" id="s-comm">0</span><span class="stat-lbl">Comments</span></div>
+            <div class="stat-item"><span class="stat-val" id="s-view">0</span><span class="stat-lbl">Views</span></div>
+        </div>
+
+        <h3>User Publications</h3>
+        <div id="p-list"></div>
+    </div>
+
+    <div class="container" id="search-page" style="display:none">
+        <h3 style="color:var(--neon)">Results</h3>
+        <div id="s-list"></div>
     </div>
 </div>
 
 <footer>Made by GitHub Pages!</footer>
 
 <script>
-    const currentUser = localStorage.getItem('loggedUser');
-    const isLoggedIn = !!currentUser;
-    let currentSearchMode = 'title';
-    let errTimer;
+    const me = localStorage.getItem('loggedUser');
+    let smode = 'title';
 
-    function getNameHTML(name) {
-        return name === 'admin' ? name + '<span class="admin-glow">🎄</span>' : name;
-    }
+    function userBadge(n) { return n === 'admin' ? n + ' <span style="color:#ffd700">🎄</span>' : n; }
 
-    if(isLoggedIn) {
+    if(me) {
         document.getElementById('body-tag').classList.add('logged-in-bg');
         document.getElementById('garland').style.display = 'block';
-        document.getElementById('registered-options').style.display = 'block';
+        document.getElementById('auth-options').style.display = 'block';
         initSnow();
     }
 
-    document.getElementById('user-display').innerHTML = isLoggedIn ? 
-        `<span style="font-weight:bold; cursor:pointer" onclick="viewProfile()">${getNameHTML(currentUser)}</span> | <button class="btn-sec" style="padding:2px 8px; font-size:10px" onclick="localStorage.removeItem('loggedUser');location.reload()">EXIT</button>` : 
+    document.getElementById('auth-info').innerHTML = me ? 
+        `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${userBadge(me)}</span> | <button class="btn-sec" style="padding:4px 8px; font-size:10px" onclick="localStorage.removeItem('loggedUser');location.reload()">EXIT</button>` : 
         `<button class="btn-sec" onclick="location.href='./login'">LOGIN</button>`;
 
-    function switchMode() {
-        currentSearchMode = (currentSearchMode === 'title') ? 'tag' : 'title';
-        document.getElementById('modeSwitcher').innerText = currentSearchMode === 'title' ? 'TITLE NAME' : 'TITLE TAG';
-        processSearch(document.getElementById('globalSearch').value);
+    function openProfile() {
+        document.getElementById('create-page').style.display = 'none';
+        document.getElementById('search-page').style.display = 'none';
+        document.getElementById('profile-page').style.display = 'block';
+        
+        document.getElementById('p-user-name').innerHTML = userBadge(me);
+        
+        const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
+        const mine = all.filter(s => s.u === me);
+        
+        document.getElementById('s-count').innerText = mine.length;
+        document.getElementById('s-comm').innerText = mine.length * 5;
+        document.getElementById('s-view').innerText = mine.length * 120;
+
+        const list = document.getElementById('p-list');
+        list.innerHTML = mine.length ? '' : '<p>No shares created yet.</p>';
+        mine.forEach(s => {
+            list.innerHTML += `<div style="background:#1e293b; padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>${s.t}</span>
+                <button class="btn btn-main" style="width:auto; padding:5px 10px" onclick="location.href='${s.url}'">OPEN</button>
+            </div>`;
+        });
     }
 
-    function processSearch(val) {
-        val = val.trim().toLowerCase();
-        const resP = document.getElementById('results-page');
-        const editP = document.getElementById('editor-page');
-        const err = document.getElementById('search-error');
-        const list = document.getElementById('results-list');
+    function showAsGuest() {
+        document.getElementById('search-zone').style.display = 'none';
+        document.getElementById('guest-mode-ui').style.display = 'block';
+        document.getElementById('guest-trigger').style.display = 'none';
+    }
 
-        if(!val) { resP.style.display='none'; editP.style.display='block'; return; }
+    function saveShare() {
+        const t = document.getElementById('share-title').value;
+        if(!t) return alert("Title required!");
+        const data = { t, c: document.getElementById('editor').value, u: me || 'Guest', tags: document.getElementById('tags-in').value.split(','), ts: Date.now() };
+        const url = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        let all = JSON.parse(localStorage.getItem('global_shares') || '[]');
+        all.push({...data, url});
+        localStorage.setItem('global_shares', JSON.stringify(all));
+        alert("Published!");
+        location.reload();
+    }
 
+    function doSearch(q) {
+        q = q.trim().toLowerCase();
+        const sPage = document.getElementById('search-page');
+        const cPage = document.getElementById('create-page');
+        if(!q) { sPage.style.display='none'; cPage.style.display='block'; return; }
+        
         const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
-        let matches = (currentSearchMode === 'title') ? 
-            all.filter(i => i.t.toLowerCase().includes(val)) : 
-            all.filter(i => val.split(/[\s,]+/).filter(t=>t).some(st => i.tags && i.tags.includes(st)));
+        const found = all.filter(i => i.t.toLowerCase().includes(q));
 
-        if(matches.length > 0) {
-            editP.style.display='none'; resP.style.display='block';
-            err.style.opacity='0';
+        if(found.length) {
+            cPage.style.display='none'; sPage.style.display='block';
+            const list = document.getElementById('s-list');
             list.innerHTML = '';
-            matches.forEach(m => {
-                list.innerHTML += `<div class="share-item">
-                    <div><b>${m.t}</b><br><small>By ${getNameHTML(m.u)}</small></div>
-                    <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="location.href='${m.url}'">OPEN</button>
+            found.forEach(f => {
+                list.innerHTML += `<div style="background:#1e293b; padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${f.t}</b> (by ${userBadge(f.u)})</span>
+                    <button class="btn btn-main" style="width:auto; padding:5px 10px" onclick="location.href='${f.url}'">OPEN</button>
                 </div>`;
             });
         } else {
-            err.style.opacity='1';
-            clearTimeout(errTimer); errTimer = setTimeout(() => err.style.opacity='0', 3000);
-            resP.style.display='none'; editP.style.display='block';
+            document.getElementById('search-error').style.opacity = '1';
+            setTimeout(() => document.getElementById('search-error').style.opacity = '0', 2000);
         }
-    }
-
-    function viewProfile() {
-        document.getElementById('editor-page').style.display='none';
-        document.getElementById('results-page').style.display='none';
-        const pPage = document.getElementById('profile-page');
-        pPage.style.display='block';
-        document.getElementById('profile-title').innerHTML = getNameHTML(currentUser);
-    }
-
-    function readLocalFile(input) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('editor').value = e.target.result;
-            document.getElementById('share-title').value = file.name;
-        };
-        reader.readAsText(file);
-    }
-
-    function finalizePublish() {
-        const t = document.getElementById('share-title').value;
-        if(!t) return alert("Title required!");
-        const tags = document.getElementById('share-tags').value.split(',').map(s=>s.trim().toLowerCase()).filter(s=>s);
-        const data = { t, c: document.getElementById('editor').value, u: currentUser || 'Guest', tags, ts: Date.now() };
-        const link = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        let all = JSON.parse(localStorage.getItem('global_shares') || '[]');
-        all.push({...data, url: link});
-        localStorage.setItem('global_shares', JSON.stringify(all));
-        alert("Published successfully!");
-        location.reload();
     }
 
     function initSnow() {
@@ -197,7 +197,7 @@
         c.style.display = 'block';
         let W = window.innerWidth, H = window.innerHeight;
         c.width = W; c.height = H;
-        let flakes = Array.from({length: 50}, () => ({x: Math.random()*W, y: Math.random()*H, r: Math.random()*3+1, d: Math.random()*1}));
+        let flakes = Array.from({length: 40}, () => ({x: Math.random()*W, y: Math.random()*H, r: Math.random()*2+1, d: Math.random()*1}));
         function draw() {
             ctx.clearRect(0, 0, W, H); ctx.fillStyle = "white"; ctx.beginPath();
             flakes.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true); });
