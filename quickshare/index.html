@@ -5,183 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QUICKSHARE</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; --gold: #ffd700; --blue: #3b82f6; --input-bg: #1e293b; --border: #334155; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
-        .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
-        
-        .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; animation: flash 1.5s infinite alternate; }
-        @keyframes flash { from { opacity: 0.8; } to { opacity: 1; } }
-        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
-
-        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 101; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
-        
         textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-        input, select { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; }
-        
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-main { background: var(--neon); color: #020617; width: 100%; }
-        
-        #fun-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--neon); color: #000; padding: 25px; border-radius: 15px; font-weight: bold; z-index: 20000; display: none; box-shadow: 0 0 50px var(--neon); text-align: center; font-size: 18px; }
-        footer { text-align: center; padding: 30px; color: #475569; font-size: 11px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; text-transform: uppercase; transition: 0.3s; }
+        .btn-main { background: var(--neon); color: #020617; }
+        .btn-upload { background: #3b82f6; color: white; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 8px; }
+        #file-info { font-size: 12px; color: #94a3b8; margin-bottom: 10px; display: none; }
+        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; }
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
-<body id="body-tag">
-
-<div class="garland" id="garland-obj"></div>
-<canvas id="snow-canvas"></canvas>
-<div id="fun-msg">We Agree, but we want to make the service fun!</div>
+<body>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.origin + window.location.pathname">❄️ QUICKSHARE</div>
     <div id="auth-info"></div>
 </header>
 
-<div id="page-content">
-    <div class="container" id="view-page" style="display:none">
-        <h2 id="view-title" style="color:var(--neon); margin:0;"></h2>
-        <div id="view-meta" style="font-size:12px; color:#64748b; margin-bottom:15px;"></div>
-        <textarea id="view-content" readonly></textarea>
+<div class="container" id="view-page" style="display:none">
+    <h2 id="view-title" style="color:var(--neon);"></h2>
+    <div id="view-meta" style="font-size:12px; color:#64748b; margin-bottom:15px;"></div>
+    <div id="file-download-zone" style="display:none; background:#1e293b; padding:15px; border-radius:8px; margin-bottom:15px;">
+        <p style="margin:0 0 10px 0; font-size:14px;">📎 Attached File detected</p>
+        <button class="btn btn-main" id="dl-btn">Download Attachment</button>
     </div>
+    <textarea id="view-content" readonly></textarea>
+</div>
 
-    <div class="container" id="create-page">
-        <input type="text" id="share-title" placeholder="Filename / Title *">
-        <textarea id="editor" placeholder="Paste your content here..."></textarea>
-        <div id="extra-options" style="display:none; margin-top:12px;">
-            <div class="grid">
-                <input type="text" id="tags-in" placeholder="Tags">
-                <input type="password" id="pass-in" placeholder="Set Password">
-            </div>
-            <div class="grid">
-                <select id="life-in"><option value="0">Life: Permanent</option></select>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="captcha-in">
-                    <label style="font-size:13px;">QuickCaptcha</label>
-                </div>
-            </div>
-        </div>
-        <button class="btn btn-main" style="margin-top:15px;" onclick="saveShare()">🚀 Publish Share</button>
+<div class="container" id="create-page">
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
+        <input type="text" id="share-title" style="flex:1; background:#1e293b; border:1px solid var(--border); color:white; padding:12px; border-radius:6px;" placeholder="Filename / Title *">
+        <label class="btn btn-upload">
+            📁 Upload File
+            <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
+        </label>
     </div>
-
-    <div class="container" id="profile-page" style="display:none">
-        <div style="text-align:center;">
-            <h1 id="p-user-name" style="font-size:32px; margin:0;"></h1>
-            <button id="back-to-real" class="btn btn-main" style="display:none; width:auto; margin:10px auto;" onclick="viewAsGuest(false)">Poor Guests</button>
-        </div>
-        <div id="stats-container" class="grid" style="margin: 20px 0; grid-template-columns: repeat(3, 1fr); text-align: center;">
-            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span id="stat-shares" style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Shares</small></div>
-            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Comments</small></div>
-            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Views</small></div>
-        </div>
-        <div id="p-list"></div>
+    
+    <div id="file-info"></div>
+    <textarea id="editor" placeholder="Type content or add file description here..."></textarea>
+    
+    <div style="margin-top:15px;">
+        <input type="checkbox" id="captcha-in"> <label style="font-size:13px;">QuickCaptcha</label>
     </div>
+    <button class="btn btn-main" style="width:100%; margin-top:15px;" onclick="saveShare()">🚀 Publish Share</button>
 </div>
 
 <footer>Made by GitHub Pages!</footer>
 
 <script>
+    let attachedFileData = null;
+    let attachedFileName = null;
     const me = localStorage.getItem('loggedUser');
-    let isSnowing = true;
 
-    function getBadge(u) { return u === 'admin' ? u + ' 🎄' : u; }
+    function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
 
-    // Инициализация при загрузке
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const sParam = urlParams.get('s');
+        attachedFileName = file.name;
+        document.getElementById('share-title').value = file.name;
+        const info = document.getElementById('file-info');
+        info.style.display = "block";
+        info.innerText = "Selected: " + file.name + " (" + (file.size/1024).toFixed(1) + " KB)";
 
-        if(sParam) {
-            showView(sParam);
-        } else if(me) {
-            document.getElementById('auth-info').innerHTML = `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${getBadge(me)}</span>`;
-            document.getElementById('extra-options').style.display = 'block';
-            document.getElementById('body-tag').classList.add('logged-in-bg');
+        const reader = new FileReader();
+        
+        // Если это текстовый файл, читаем содержимое в редактор
+        if (file.type.startsWith('text/') || file.name.endsWith('.js') || file.name.endsWith('.css') || file.name.endsWith('.json')) {
+            reader.onload = (e) => {
+                document.getElementById('editor').value = e.target.result;
+            };
+            reader.readAsText(file);
         } else {
-            document.getElementById('auth-info').innerHTML = `<button onclick="location.href='./login'">LOGIN</button>`;
+            // Если бинарный, сохраняем как DataURL для скачивания
+            reader.onload = (e) => {
+                attachedFileData = e.target.result;
+                document.getElementById('editor').placeholder = "Enter description for this file...";
+            };
+            reader.readAsDataURL(file);
         }
-    };
-
-    function showView(s) {
-        document.getElementById('create-page').style.display = 'none';
-        document.getElementById('profile-page').style.display = 'none';
-        document.getElementById('view-page').style.display = 'block';
-        try {
-            const data = JSON.parse(decodeURIComponent(escape(atob(s))));
-            document.getElementById('view-title').innerText = data.t;
-            document.getElementById('view-content').value = data.c;
-            document.getElementById('view-meta').innerHTML = `Shared by ${getBadge(data.u)} • ${new Date(data.ts).toLocaleString()}`;
-        } catch(e) { console.error("Error decoding share"); }
-    }
-
-    function openProfile() {
-        document.getElementById('create-page').style.display = 'none';
-        document.getElementById('view-page').style.display = 'none';
-        document.getElementById('profile-page').style.display = 'block';
-        document.getElementById('p-user-name').innerHTML = getBadge(me);
-        
-        const mine = JSON.parse(localStorage.getItem('global_shares') || '[]').filter(s => s.u === me);
-        document.getElementById('stat-shares').innerText = mine.length;
-        
-        const list = document.getElementById('p-list');
-        list.innerHTML = '';
-        mine.forEach(s => {
-            list.innerHTML += `<div style="background:#1e293b; padding:15px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                <span>${s.t}</span>
-                <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="window.open('${s.url}', '_blank')">OPEN</button>
-            </div>`;
-        });
     }
 
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Fill fields!");
-        const data = { t, c, u: me || 'Guest', ts: Date.now() };
+        if(!t) return alert("Title required!");
+
+        const data = { 
+            t, c, 
+            u: me || 'Guest', 
+            ts: Date.now(),
+            file: attachedFileData,
+            fileName: attachedFileName
+        };
+        
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        const url = window.location.origin + window.location.pathname + "?s=" + s;
-        let all = JSON.parse(localStorage.getItem('global_shares') || '[]');
-        all.push({...data, url});
-        localStorage.setItem('global_shares', JSON.stringify(all));
-        location.href = url;
+        location.href = window.location.origin + window.location.pathname + "?s=" + s;
     }
 
-    function viewAsGuest(active) {
-        const msg = document.getElementById('fun-msg');
-        if(!active) {
-            msg.style.display = 'block';
-            setTimeout(() => {
-                msg.style.display = 'none';
-                location.reload();
-            }, 3000);
-        }
-    }
+    window.onload = () => {
+        const sParam = new URLSearchParams(window.location.search).get('s');
+        if(sParam) {
+            document.getElementById('create-page').style.display = 'none';
+            document.getElementById('view-page').style.display = 'block';
+            const data = JSON.parse(decodeURIComponent(escape(atob(sParam))));
+            
+            document.getElementById('view-title').innerText = data.t;
+            document.getElementById('view-content').value = data.c || "No description provided.";
+            document.getElementById('view-meta').innerText = "By " + data.u + " at " + new Date(data.ts).toLocaleString();
 
-    // Снег
-    const canvas = document.getElementById('snow-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height, flakes = [];
-    function initSnow() {
-        width = window.innerWidth; height = window.innerHeight;
-        canvas.width = width; canvas.height = height;
-        flakes = [];
-        for(let i=0; i<150; i++) { flakes.push({ x: Math.random()*width, y: Math.random()*height, r: Math.random()*3+1, d: Math.random()*1 }); }
-    }
-    function drawSnow() {
-        ctx.clearRect(0, 0, width, height);
-        if(!isSnowing) return;
-        ctx.fillStyle = "white"; ctx.beginPath();
-        for(let i=0; i<flakes.length; i++) {
-            let f = flakes[i]; ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true);
+            if(data.file) {
+                const zone = document.getElementById('file-download-zone');
+                zone.style.display = "block";
+                document.getElementById('dl-btn').onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = data.file;
+                    a.download = data.fileName || "download";
+                    a.click();
+                };
+            }
         }
-        ctx.fill();
-        for(let i=0; i<flakes.length; i++) {
-            let f = flakes[i]; f.y += Math.pow(f.d, 2) + 1; f.x += Math.sin(f.y / 50);
-            if(f.y > height) { flakes[i] = { x: Math.random()*width, y: 0, r: f.r, d: f.d }; }
-        }
-    }
-    window.addEventListener('resize', initSnow);
-    initSnow(); setInterval(drawSnow, 30);
+        if(me) document.getElementById('auth-info').innerText = me + " 🎄";
+    };
 </script>
 </body>
 </html>
