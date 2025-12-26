@@ -6,18 +6,18 @@
     <title>QUICKSHARE</title>
     <style>
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; }
         header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 101; }
-        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; }
-        .logout-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; font-weight: bold; }
+        .user-profile-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; padding: 5px 10px; border: 1px dashed var(--neon); border-radius: 4px; }
+        .user-profile-link:hover { background: rgba(0, 255, 136, 0.1); }
         .container { max-width: 850px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
-        textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
-        textarea { height: 250px; color: var(--neon); font-family: monospace; }
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        label { display: block; font-size: 11px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
-        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
+        textarea, input, select { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
+        textarea { height: 200px; color: var(--neon); font-family: monospace; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 5px; }
+        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+        .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; margin-bottom: 12px; }
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
@@ -32,36 +32,36 @@
 
 <div id="page-content">
     <div class="container" id="create-page">
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <input type="text" id="share-title" maxlength="20" placeholder="Title (Max 20 chars) *" style="margin:0">
-            <label class="btn-upload" style="margin:0">
+        <div style="display:flex; gap:10px; align-items: flex-start;">
+            <input type="text" id="share-title" maxlength="20" placeholder="Title (Max 20 chars) *" style="margin-top:0">
+            <label class="btn-upload">
                 📁 Upload File
                 <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
             </label>
         </div>
-        
-        <textarea id="editor" placeholder="Main Content..."></textarea>
+
+        <textarea id="editor" placeholder="Type or paste your content here..."></textarea>
         
         <input type="text" id="share-desc" placeholder="Description (Optional)">
-        <input type="text" id="share-tags" placeholder="Tags (e.g. logs, script)">
+        <input type="text" id="share-tags" placeholder="Tags (e.g. log, private, code)">
 
         <div class="settings-grid">
             <div>
-                <label>Password protection</label>
-                <input type="password" id="share-pass" placeholder="Optional Password">
+                <label>Security Password</label>
+                <input type="password" id="share-pass" placeholder="Password (Optional)">
             </div>
             <div>
-                <label>Custom Expire Date & Time</label>
+                <label>Custom Expiration Date</label>
                 <input type="datetime-local" id="share-expire">
             </div>
         </div>
 
-        <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
+        <div style="margin: 5px 0 15px 0; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
             <label style="font-size:13px; cursor:pointer; color:white; text-transform:none;" for="captcha-in">QuickCaptcha</label>
         </div>
 
-        <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
+        <button class="btn-main" onclick="saveShare()">🚀 Publish Share</button>
     </div>
 
     <div class="container" id="view-page" style="display:none">
@@ -69,6 +69,10 @@
         <div id="view-meta" style="font-size:12px; color:#64748b; margin:10px 0 20px 0;"></div>
         <textarea id="view-content" readonly></textarea>
         <div id="view-description" style="margin-top:15px; background:#1e293b; padding:15px; border-radius:8px; display:none; border-left: 4px solid var(--neon);"></div>
+        
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button style="flex:1; padding:10px; cursor:pointer;" onclick="location.reload()">Back</button>
+        </div>
     </div>
 </div>
 
@@ -83,27 +87,15 @@
         
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = `
-                <span class="user-link">${me} 🎄</span>
-                <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>
-            `;
+            authDiv.innerHTML = `<a class="user-profile-link" onclick="viewProfile()">${me} 🎄</a>`;
         } else {
-            authDiv.innerHTML = '<button style="background:var(--neon); border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer" onclick="location.href=\'./login\'">LOGIN</button>';
+            authDiv.innerHTML = '<button onclick="location.href=\'./login\'" style="cursor:pointer; background:var(--neon); border:none; padding:8px 15px; border-radius:4px; font-weight:bold;">LOGIN</button>';
         }
     };
 
-    function secureLogout() {
-        const code = prompt("Enter 6-digit recovery code to logout:");
-        if (!code) return;
-        let users = JSON.parse(localStorage.getItem('users') || '[]');
-        let userObj = users.find(x => x.user === me);
-        if (userObj && userObj.recovery === code) {
-            localStorage.removeItem('loggedUser');
-            alert("Session cleared. Account and Shares preserved.");
-            location.href = window.location.origin + window.location.pathname;
-        } else {
-            alert("Invalid code!");
-        }
+    function viewProfile() {
+        alert("Redirecting to your profile page...");
+        // Здесь можно добавить location.href = './profile';
     }
 
     function saveShare() {
@@ -130,28 +122,17 @@
     function renderView(s) {
         try {
             const data = JSON.parse(decodeURIComponent(escape(atob(s))));
-            
-            if(data.exp && Date.now() > data.exp) {
-                alert("This Share has expired!");
-                location.href = window.location.origin + window.location.pathname;
-                return;
-            }
+            if(data.exp && Date.now() > data.exp) return alert("Expired!");
 
             document.getElementById('create-page').style.display = 'none';
             document.getElementById('view-page').style.display = 'block';
             document.getElementById('view-title').innerText = data.t;
             document.getElementById('view-content').value = data.c;
-            
             if(data.d) {
                 const db = document.getElementById('view-description');
-                db.innerText = data.d;
-                db.style.display = 'block';
+                db.innerText = data.d; db.style.display = 'block';
             }
-            
-            let meta = "By " + data.u + " | Tags: " + (data.tg || 'none');
-            if(data.exp) meta += " | Expires: " + new Date(data.exp).toLocaleString();
-            document.getElementById('view-meta').innerText = meta;
-        } catch(e) {}
+        } catch(e) { alert("Invalid Share data"); }
     }
 
     function handleFileUpload(input) {
