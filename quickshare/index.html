@@ -5,129 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QUICKSHARE</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; --gold: #ffd700; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
+        .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; }
+        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
+        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; }
         .container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
         textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; text-transform: uppercase; transition: 0.3s; }
+        .btn-group { display: flex; gap: 8px; margin: 15px 0; flex-wrap: wrap; }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; background: #1e293b; color: white; }
         .btn-main { background: var(--neon); color: #020617; }
-        .btn-upload { background: #3b82f6; color: white; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 8px; }
-        #file-info { font-size: 12px; color: #94a3b8; margin-bottom: 10px; display: none; }
-        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; }
+        .btn-danger { background: #ef4444; }
+        
+        /* Комментарии */
+        .comment-box { background: #0f172a; border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .comment-item { background: #1e293b; padding: 12px; border-radius: 6px; margin-bottom: 10px; position: relative; border-left: 4px solid transparent; }
+        .comment-pinned { border-left-color: var(--gold); background: #262f3f; }
+        .pin-btn { position: absolute; right: 10px; top: 10px; cursor: pointer; color: #475569; font-size: 18px; }
+        .pin-active { color: var(--gold) !important; }
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body>
+
+<div class="garland"></div>
+<canvas id="snow-canvas"></canvas>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.origin + window.location.pathname">❄️ QUICKSHARE</div>
     <div id="auth-info"></div>
 </header>
 
-<div class="container" id="view-page" style="display:none">
-    <h2 id="view-title" style="color:var(--neon);"></h2>
-    <div id="view-meta" style="font-size:12px; color:#64748b; margin-bottom:15px;"></div>
-    <div id="file-download-zone" style="display:none; background:#1e293b; padding:15px; border-radius:8px; margin-bottom:15px;">
-        <p style="margin:0 0 10px 0; font-size:14px;">📎 Attached File detected</p>
-        <button class="btn btn-main" id="dl-btn">Download Attachment</button>
-    </div>
-    <textarea id="view-content" readonly></textarea>
-</div>
+<div id="page-content">
+    <div class="container" id="view-page" style="display:none">
+        <h2 id="view-title" style="color:var(--neon); margin:0;"></h2>
+        <div id="view-meta" style="font-size:12px; color:#64748b; margin:10px 0;"></div>
+        
+        <textarea id="view-content" readonly></textarea>
 
-<div class="container" id="create-page">
-    <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
-        <input type="text" id="share-title" style="flex:1; background:#1e293b; border:1px solid var(--border); color:white; padding:12px; border-radius:6px;" placeholder="Filename / Title *">
-        <label class="btn btn-upload">
-            📁 Upload File
-            <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
-        </label>
+        <div class="btn-group">
+            <button class="btn" onclick="actionRaw()">Raw</button>
+            <button class="btn" onclick="actionDownload()">Download</button>
+            <button class="btn" onclick="actionCopy()">Copy</button>
+        </div>
+
+        <div id="author-tools" class="btn-group" style="display:none; border-top:1px solid #334155; padding-top:15px;">
+            <button class="btn btn-main" onclick="actionEdit()">Edit</button>
+            <button class="btn btn-main" onclick="actionClone()">Clone</button>
+            <button class="btn btn-danger" onclick="actionDelete()">Delete</button>
+        </div>
+
+        <div class="comment-box">
+            <h3>Comments</h3>
+            <div id="comments-list"></div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <input type="text" id="comm-input" style="flex:1; background:#000; border:1px solid var(--border); color:white; padding:10px; border-radius:6px;" placeholder="Add a comment...">
+                <button class="btn btn-main" onclick="addComment()">Send</button>
+            </div>
+        </div>
     </div>
-    
-    <div id="file-info"></div>
-    <textarea id="editor" placeholder="Type content or add file description here..."></textarea>
-    
-    <div style="margin-top:15px;">
-        <input type="checkbox" id="captcha-in"> <label style="font-size:13px;">QuickCaptcha</label>
+
+    <div class="container" id="create-page">
+        <input type="text" id="share-title" maxlength="20" style="width:100%; background:#1e293b; border:1px solid var(--border); color:white; padding:12px; border-radius:6px; margin-bottom:12px; box-sizing:border-box;" placeholder="Title (Max 20 chars) *">
+        <textarea id="editor" placeholder="Write something..."></textarea>
+        <div style="margin-top:12px;">
+            <input type="checkbox" id="captcha-in"> <label style="font-size:13px;">QuickCaptcha</label>
+        </div>
+        <button class="btn btn-main" style="width:100%; margin-top:15px; padding:15px;" onclick="saveShare()">🚀 Publish</button>
     </div>
-    <button class="btn btn-main" style="width:100%; margin-top:15px;" onclick="saveShare()">🚀 Publish Share</button>
 </div>
 
 <footer>Made by GitHub Pages!</footer>
 
 <script>
-    let attachedFileData = null;
-    let attachedFileName = null;
     const me = localStorage.getItem('loggedUser');
+    const urlParams = new URLSearchParams(window.location.search);
+    const sParam = urlParams.get('s');
+    let currentShareData = null;
 
-    function handleFileUpload(input) {
-        const file = input.files[0];
-        if (!file) return;
-
-        attachedFileName = file.name;
-        document.getElementById('share-title').value = file.name;
-        const info = document.getElementById('file-info');
-        info.style.display = "block";
-        info.innerText = "Selected: " + file.name + " (" + (file.size/1024).toFixed(1) + " KB)";
-
-        const reader = new FileReader();
-        
-        // Если это текстовый файл, читаем содержимое в редактор
-        if (file.type.startsWith('text/') || file.name.endsWith('.js') || file.name.endsWith('.css') || file.name.endsWith('.json')) {
-            reader.onload = (e) => {
-                document.getElementById('editor').value = e.target.result;
-            };
-            reader.readAsText(file);
-        } else {
-            // Если бинарный, сохраняем как DataURL для скачивания
-            reader.onload = (e) => {
-                attachedFileData = e.target.result;
-                document.getElementById('editor').placeholder = "Enter description for this file...";
-            };
-            reader.readAsDataURL(file);
+    window.onload = () => {
+        if(sParam) {
+            renderView(sParam);
+        } else if(me) {
+            document.getElementById('auth-info').innerText = me + " 🎄";
         }
+    };
+
+    function renderView(s) {
+        document.getElementById('create-page').style.display = 'none';
+        document.getElementById('view-page').style.display = 'block';
+        try {
+            currentShareData = JSON.parse(decodeURIComponent(escape(atob(s))));
+            document.getElementById('view-title').innerText = currentShareData.t;
+            document.getElementById('view-content').value = currentShareData.c;
+            document.getElementById('view-meta').innerText = "By " + currentShareData.u + " • " + new Date(currentShareData.ts).toLocaleString();
+            
+            if(me === currentShareData.u) document.getElementById('author-tools').style.display = 'flex';
+            
+            loadComments();
+        } catch(e) { alert("Link Error"); }
+    }
+
+    function addComment() {
+        if(!me) return alert("Login to comment!");
+        const txt = document.getElementById('comm-input').value;
+        if(!txt) return;
+
+        let allComms = JSON.parse(localStorage.getItem('comms_' + sParam) || '[]');
+        allComms.push({ u: me, text: txt, ts: Date.now(), pinned: false });
+        localStorage.setItem('comms_' + sParam, JSON.stringify(allComms));
+        document.getElementById('comm-input').value = "";
+        loadComments();
+    }
+
+    function loadComments() {
+        const list = document.getElementById('comments-list');
+        let allComms = JSON.parse(localStorage.getItem('comms_' + sParam) || '[]');
+        
+        // Сортировка: закрепленные вверху
+        allComms.sort((a, b) => b.pinned - a.pinned || b.ts - a.ts);
+        
+        list.innerHTML = allComms.map((c, idx) => `
+            <div class="comment-item ${c.pinned ? 'comment-pinned' : ''}">
+                <strong style="color:var(--neon)">${c.u}</strong>: ${c.text}
+                ${me === currentShareData.u ? `<span class="pin-btn ${c.pinned ? 'pin-active' : ''}" onclick="togglePin(${idx})">⭐</span>` : c.pinned ? '<span class="pin-btn pin-active">⭐</span>' : ''}
+            </div>
+        `).join('');
+    }
+
+    function togglePin(idx) {
+        let allComms = JSON.parse(localStorage.getItem('comms_' + sParam) || '[]');
+        allComms[idx].pinned = !allComms[idx].pinned;
+        localStorage.setItem('comms_' + sParam, JSON.stringify(allComms));
+        loadComments();
+    }
+
+    // Вспомогательные функции кнопок
+    function actionCopy() { navigator.clipboard.writeText(document.getElementById('view-content').value); alert("Copied!"); }
+    function actionDownload() {
+        const blob = new Blob([document.getElementById('view-content').value], {type:"text/plain"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = document.getElementById('view-title').innerText + ".txt";
+        a.click();
+    }
+    function actionRaw() {
+        const win = window.open();
+        win.document.write('<pre>' + document.getElementById('view-content').value + '</pre>');
     }
 
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        if(!t) return alert("Title required!");
-
-        const data = { 
-            t, c, 
-            u: me || 'Guest', 
-            ts: Date.now(),
-            file: attachedFileData,
-            fileName: attachedFileName
-        };
-        
+        if(!t || !c) return alert("Fill all!");
+        const data = { t, c, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         location.href = window.location.origin + window.location.pathname + "?s=" + s;
     }
 
-    window.onload = () => {
-        const sParam = new URLSearchParams(window.location.search).get('s');
-        if(sParam) {
-            document.getElementById('create-page').style.display = 'none';
-            document.getElementById('view-page').style.display = 'block';
-            const data = JSON.parse(decodeURIComponent(escape(atob(sParam))));
-            
-            document.getElementById('view-title').innerText = data.t;
-            document.getElementById('view-content').value = data.c || "No description provided.";
-            document.getElementById('view-meta').innerText = "By " + data.u + " at " + new Date(data.ts).toLocaleString();
-
-            if(data.file) {
-                const zone = document.getElementById('file-download-zone');
-                zone.style.display = "block";
-                document.getElementById('dl-btn').onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = data.file;
-                    a.download = data.fileName || "download";
-                    a.click();
-                };
-            }
-        }
-        if(me) document.getElementById('auth-info').innerText = me + " 🎄";
-    };
+    // Snow logic (simplified for code length)
+    const canvas = document.getElementById('snow-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, flakes = [];
+    function initSnow() {
+        width = window.innerWidth; height = window.innerHeight;
+        canvas.width = width; canvas.height = height;
+        for(let i=0; i<100; i++) flakes.push({x: Math.random()*width, y: Math.random()*height, r: Math.random()*3+1, d: Math.random()*1});
+    }
+    function drawSnow() {
+        ctx.clearRect(0,0,width,height); ctx.fillStyle="white"; ctx.beginPath();
+        flakes.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); });
+        ctx.fill();
+        flakes.forEach(f => { f.y += f.d + 1; if(f.y > height) f.y = -10; });
+    }
+    initSnow(); setInterval(drawSnow, 30);
 </script>
 </body>
 </html>
