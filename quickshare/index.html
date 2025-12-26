@@ -18,8 +18,13 @@
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
-        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: center; min-width: 300px; }
+        
+        /* MODAL STATS */
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: left; min-width: 320px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+        .stat-item { display: flex; justify-content: space-between; margin: 15px 0; border-bottom: 1px solid #1e293b; padding-bottom: 5px; }
+        .stat-val { color: var(--neon); font-weight: bold; }
+
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
@@ -35,34 +40,31 @@
 
 <div id="statsModal" class="modal">
     <div class="modal-content">
-        <h2 style="color:var(--neon); margin-top:0;">Your Statistics 📊</h2>
-        <p id="stats-user"></p>
-        <p id="stats-count"></p>
-        <button class="btn-main" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
+        <h2 style="color:var(--neon); margin-top:0; text-align:center;">Your Statistics 📊</h2>
+        <div class="stat-item"><span>User:</span> <span class="stat-val" id="st-name"></span></div>
+        <div class="stat-item"><span>Total Shares:</span> <span class="stat-val" id="st-shares">0</span></div>
+        <div class="stat-item"><span>Total Comments:</span> <span class="stat-val" id="st-comms">0</span></div>
+        <div class="stat-item"><span>Total Views:</span> <span class="stat-val" id="st-views">0</span></div>
+        <button class="btn-main" style="margin-top:10px;" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
     </div>
 </div>
 
-<div id="page-content">
-    <div class="container" id="create-page">
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *" style="margin:0">
-            <label class="btn-upload">
-                📁 Upload File
-                <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
-            </label>
-        </div>
-        <textarea id="editor" placeholder="Write something..."></textarea>
-        <input type="text" id="share-desc" placeholder="Description (Optional)">
-        <div class="settings-grid">
-            <input type="password" id="share-pass" placeholder="Password (Optional)">
-            <input type="datetime-local" id="share-expire">
-        </div>
-        <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
-            <label style="font-size:13px; cursor:pointer; color:white;" for="captcha-in">QuickCaptcha</label>
-        </div>
-        <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
+<div class="container" id="create-page">
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *" style="margin:0">
+        <label class="btn-upload">📁 Upload <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)"></label>
     </div>
+    <textarea id="editor" placeholder="Content..."></textarea>
+    <input type="text" id="share-desc" placeholder="Description (Optional)">
+    <div class="settings-grid">
+        <input type="password" id="share-pass" placeholder="Password (Optional)">
+        <input type="datetime-local" id="share-expire">
+    </div>
+    <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
+        <label style="font-size:13px; cursor:pointer;" for="captcha-in">QuickCaptcha</label>
+    </div>
+    <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
 </div>
 
 <footer>Made by GitHub Pages!</footer>
@@ -73,7 +75,7 @@
     window.onload = () => {
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = `<span class="user-link" onclick="showStats()">${me} 🎄</span>
+            authDiv.innerHTML = `<span class="user-link" onclick="updateAndShowStats()">${me} 🎄</span>
                                  <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>`;
         } else {
             authDiv.innerHTML = '<button class="btn-main" style="width:auto; padding:8px 15px;" onclick="location.href=\'./login\'">LOGIN</button>';
@@ -81,26 +83,40 @@
         initSnow();
     };
 
-    function initSnow() {
-        const canvas = document.getElementById('snow-canvas');
-        const ctx = canvas.getContext('2d');
-        let w = window.innerWidth, h = window.innerHeight;
-        canvas.width = w; canvas.height = h;
-        let p = [];
-        for(let i=0; i<100; i++) p.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*3+1, d:Math.random()*1});
-        function draw() {
-            ctx.clearRect(0,0,w,h); ctx.fillStyle="white"; ctx.beginPath();
-            p.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); });
-            ctx.fill();
-            p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; f.x += Math.sin(f.y/30); });
-        }
-        setInterval(draw, 30);
+    function updateAndShowStats() {
+        // Загружаем данные из localStorage
+        const allShares = JSON.parse(localStorage.getItem('my_shares_db') || '[]');
+        const userShares = allShares.filter(s => s.author === me);
+        
+        let totalViews = 0;
+        let totalComms = 0;
+        
+        userShares.forEach(s => {
+            totalViews += (s.views || 0);
+            totalComms += (s.commentsCount || 0);
+        });
+
+        document.getElementById('st-name').innerText = me;
+        document.getElementById('st-shares').innerText = userShares.length;
+        document.getElementById('st-comms').innerText = totalComms;
+        document.getElementById('st-views').innerText = totalViews;
+        
+        document.getElementById('statsModal').style.display = 'flex';
     }
 
-    function showStats() {
-        document.getElementById('stats-user').innerText = "User: " + me;
-        document.getElementById('stats-count').innerText = "Status: Online ❄️";
-        document.getElementById('statsModal').style.display = 'flex';
+    function saveShare() {
+        const t = document.getElementById('share-title').value;
+        const c = document.getElementById('editor').value;
+        if(!t || !c) return alert("Title and Content required!");
+
+        // Локальное сохранение для статистики
+        let db = JSON.parse(localStorage.getItem('my_shares_db') || '[]');
+        db.push({ author: me || 'Guest', title: t, ts: Date.now(), views: 0, commentsCount: 0 });
+        localStorage.setItem('my_shares_db', JSON.stringify(db));
+
+        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
+        const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        location.href = window.location.origin + window.location.pathname + "?s=" + s;
     }
 
     function secureLogout() {
@@ -111,27 +127,22 @@
         if (userObj && userObj.recovery === code) {
             localStorage.removeItem('loggedUser');
             location.reload();
-        } else { alert("Wrong code!"); }
+        } else { alert("Invalid code!"); }
     }
 
-    function saveShare() {
-        const t = document.getElementById('share-title').value;
-        const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Fill Title and Content!");
-        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
-        const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        location.href = window.location.origin + window.location.pathname + "?s=" + s;
-    }
-
-    function handleFileUpload(input) {
-        const file = input.files[0];
-        if(!file) return;
-        document.getElementById('share-title').value = file.name;
-        const reader = new FileReader();
-        if(file.type.startsWith('text/')) {
-            reader.onload = (e) => document.getElementById('editor').value = e.target.result;
-            reader.readAsText(file);
+    function initSnow() {
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let w = window.innerWidth, h = window.innerHeight;
+        canvas.width = w; canvas.height = h;
+        let p = [];
+        for(let i=0; i<80; i++) p.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*3+1, d:Math.random()*1});
+        function draw() {
+            ctx.clearRect(0,0,w,h); ctx.fillStyle="white"; ctx.beginPath();
+            p.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); }); ctx.fill();
+            p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; });
         }
+        setInterval(draw, 30);
     }
 </script>
 </body>
