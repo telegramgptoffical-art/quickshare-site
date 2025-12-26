@@ -1,14 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>QuickShare NY 2026</title><style>body { background: radial-gradient(circle, #0a192f, #020617); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; } header { background: rgba(255,255,255,0.05); width: 100%; padding: 20px; text-align: center; border-bottom: 1px solid #1e293b; } .container { width: 90%; max-width: 800px; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #334155; } textarea { width: 100%; height: 300px; background: #020617; color: #00ff88; border: 1px solid #1e293b; border-radius: 5px; padding: 10px; box-sizing: border-box; } .toolbar { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; } .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; } .btn-main { background: #00ff88; color: #020617; } .btn-sec { background: #1e293b; color: white; border: 1px solid #334155; } #share-tools { display: none; } .user-info { margin-bottom: 10px; font-size: 12px; text-align: right; color: #00ff88; }</style></head>
-<body><header><h1>❄️ QUICKSHARE ❄️</h1></header><div class="container"><div class="user-info" id="userDisplay"></div><textarea id="editor" placeholder="Write something..."></textarea><div id="create-tools" class="toolbar"><button class="btn btn-main" onclick="publish()">PUBLISH</button></div><div id="share-tools" class="toolbar"><button class="btn btn-sec" onclick="copyText()">COPY</button><button class="btn btn-sec" onclick="downloadFile()">DOWNLOAD</button><button class="btn btn-sec" onclick="openRaw()">RAW</button><button class="btn btn-sec" style="background:#7f1d1d" onclick="clearEditor()">CLEAR</button></div></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickShare NY 2026</title>
+    <style>
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; }
+        body { background: radial-gradient(circle, #0a192f, var(--bg)); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; }
+        header { background: rgba(255,255,255,0.05); width: 100%; padding: 15px; text-align: center; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        .auth-btns { display: flex; gap: 10px; margin-right: 20px; }
+        .container { width: 95%; max-width: 900px; margin-top: 20px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: monospace; }
+        .toolbar { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; transition: 0.3s; }
+        .btn-main { background: var(--neon); color: #020617; }
+        .btn-sec { background: #1e293b; color: white; border: 1px solid #334155; }
+        .history { margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px; }
+        .share-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; }
+        .status-guest { color: #aaa; font-size: 10px; border: 1px solid #555; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0; color:var(--neon); font-size:18px; margin-left:20px;">❄️ QUICKSHARE</h2>
+    <div class="auth-btns" id="authSection">
+        </div>
+</header>
+
+<div class="container">
+    <textarea id="editor" placeholder="Start typing as a Guest..."></textarea>
+    
+    <div class="toolbar">
+        <button class="btn btn-main" onclick="publishPaste()">🚀 PUBLISH (72H)</button>
+        <button class="btn btn-sec" onclick="copyText()">COPY</button>
+        <button class="btn btn-sec" onclick="clearEditor()">CLEAR</button>
+    </div>
+
+    <div class="history">
+        <h3>My Recent Shares</h3>
+        <div id="historyList"></div>
+    </div>
+</div>
+
 <script>
     const user = localStorage.getItem('loggedUser');
-    if (!user) window.location.href = './login';
-    document.getElementById('userDisplay').innerText = 'User: ' + user;
-    function publish() { document.getElementById('create-tools').style.display = 'none'; document.getElementById('share-tools').style.display = 'flex'; document.getElementById('editor').readOnly = true; }
+    const authSection = document.getElementById('authSection');
+
+    // Настройка хедера (Login/Sign Up или Logout)
+    if (user) {
+        authSection.innerHTML = `<span style="margin-right:10px">Hi, ${user}</span><button class="btn btn-sec" onclick="logout()">LOGOUT</button>`;
+    } else {
+        authSection.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">LOGIN</button>
+                                 <button class="btn btn-sec" onclick="location.href='./signup'">SIGN UP</button>`;
+    }
+
+    function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
+
+    function publishPaste() {
+        const text = document.getElementById('editor').value;
+        if (!text.trim()) return alert("Empty text!");
+
+        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
+        const newPaste = {
+            id: Date.now(),
+            content: text.substring(0, 50) + "...",
+            fullContent: text,
+            timestamp: Date.now(),
+            isGuest: !user
+        };
+
+        pastes.push(newPaste);
+        localStorage.setItem('myPastes', JSON.stringify(pastes));
+        alert("Published! It will be saved for 72 hours.");
+        loadHistory();
+    }
+
+    function loadHistory() {
+        const list = document.getElementById('historyList');
+        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
+        const now = Date.now();
+        const limit = 72 * 3600 * 1000; // 72 часа
+
+        // Фильтруем старые пасты
+        const activePastes = pastes.filter(p => (now - p.timestamp) < limit);
+        localStorage.setItem('myPastes', JSON.stringify(activePastes));
+
+        list.innerHTML = activePastes.length ? '' : '<p style="color:#666">No shares yet.</p>';
+        
+        activePastes.reverse().forEach(p => {
+            const date = new Date(p.timestamp).toLocaleString();
+            list.innerHTML += `
+                <div class="share-item">
+                    <div>
+                        <strong>${p.content}</strong><br>
+                        <small style="color:#666">${date} ${p.isGuest ? '<span class="status-guest">GUEST</span>' : ''}</small>
+                    </div>
+                    <button class="btn btn-sec" onclick="viewPaste(${p.id})">VIEW</button>
+                </div>
+            `;
+        });
+    }
+
+    function viewPaste(id) {
+        const pastes = JSON.parse(localStorage.getItem('myPastes') || '[]');
+        const p = pastes.find(item => item.id === id);
+        if (p) {
+            document.getElementById('editor').value = p.fullContent;
+            window.scrollTo(0,0);
+        }
+    }
+
     function copyText() { navigator.clipboard.writeText(document.getElementById('editor').value); alert('Copied!'); }
-    function clearEditor() { if(confirm('Clear?')) document.getElementById('editor').value = ''; }
-    function openRaw() { const w = window.open(); w.document.write('<pre>'+document.getElementById('editor').value+'</pre>'); }
-    function downloadFile() { const blob = new Blob([document.getElementById('editor').value], {type: 'text/plain'}); const a = document.createElement('a'); a.download = 'share.txt'; a.href = URL.createObjectURL(blob); a.click(); }
-</script></body></html>
+    function clearEditor() { document.getElementById('editor').value = ''; }
+
+    loadHistory();
+</script>
+</body>
+</html>
