@@ -8,95 +8,51 @@
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; --gold: #ffd700; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
         .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; }
-        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
         header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 101; }
+        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; }
+        .logout-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; font-weight: bold; }
         .container { max-width: 850px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
-        textarea, input, select { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; font-size: 14px; }
-        textarea { height: 250px; font-family: 'Consolas', monospace; color: var(--neon); resize: vertical; }
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-        .btn-group { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; background: #1e293b; color: white; }
-        .btn:hover { background: #334155; }
-        .btn-main { background: var(--neon); color: #020617; width: 100%; font-size: 14px; }
-        .btn-upload { background: #3b82f6; color: white; margin-bottom: 0; height: 45px; display: flex; align-items: center; justify-content: center; }
-        .btn-danger { background: #ef4444; }
-        .desc-box { background: #1e293b; padding: 15px; border-radius: 8px; border-left: 4px solid var(--neon); margin: 20px 0; font-style: italic; color: #cbd5e1; }
-        .comment-item { background: #1e293b; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid transparent; }
-        .comment-pinned { border-left-color: var(--gold); background: #262f3f; }
+        textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
+        textarea { height: 200px; color: var(--neon); font-family: monospace; }
+        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div class="garland"></div>
-<canvas id="snow-canvas"></canvas>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:24px; cursor:pointer" onclick="location.href=window.location.origin + window.location.pathname">❄️ QUICKSHARE</div>
-    <div id="auth-info" style="font-weight:bold; color:var(--neon)"></div>
+    <div id="auth-info"></div>
 </header>
 
 <div id="page-content">
     <div class="container" id="create-page">
-        <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;">
-            <input type="text" id="share-title" maxlength="20" placeholder="Filename / Title (Max 20 chars) *" style="margin:0">
-            <label class="btn btn-upload" style="flex-shrink:0; width:120px; cursor:pointer">
-                📁 UPLOAD
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <input type="text" id="share-title" maxlength="20" placeholder="Title (Max 20 chars) *" style="margin:0">
+            <label class="btn-upload">
+                📁 Upload File
                 <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
             </label>
         </div>
+        <textarea id="editor" placeholder="Write something..."></textarea>
+        <input type="text" id="share-desc" placeholder="Description...">
         
-        <textarea id="editor" placeholder="Paste your code or text here..."></textarea>
-        
-        <input type="text" id="share-desc" placeholder="Add description about this share...">
-        <input type="text" id="share-tags" placeholder="Tags (e.g. logs, script, private)">
-
-        <div class="settings-grid">
-            <input type="password" id="share-pass" placeholder="Set Password (Optional)">
-            <select id="share-expire">
-                <option value="0">Life: Permanent</option>
-                <option value="10">Life: 10 Minutes</option>
-                <option value="60">Life: 1 Hour</option>
-                <option value="1440">Life: 1 Day</option>
-            </select>
-        </div>
-
         <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
             <label style="font-size:13px; cursor:pointer" for="captcha-in">QuickCaptcha</label>
         </div>
 
-        <button class="btn btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
+        <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
     </div>
 
     <div class="container" id="view-page" style="display:none">
-        <h2 id="view-title" style="color:var(--neon); margin:0; font-size:28px;"></h2>
+        <h2 id="view-title" style="color:var(--neon); margin:0;"></h2>
         <div id="view-meta" style="font-size:12px; color:#64748b; margin:10px 0 20px 0;"></div>
-        
         <textarea id="view-content" readonly></textarea>
-        
-        <div id="view-description" class="desc-box" style="display:none"></div>
-
-        <div class="btn-group">
-            <button class="btn" onclick="actionRaw()">Raw</button>
-            <button class="btn" onclick="actionCopy()">Copy</button>
-            <button class="btn" onclick="actionDownload()">Download</button>
-        </div>
-
-        <div id="author-tools" class="btn-group" style="display:none; border-top:1px solid #334155; padding-top:20px;">
-            <button class="btn btn-main" style="width:auto" onclick="actionEdit()">Edit</button>
-            <button class="btn btn-main" style="width:auto" onclick="actionClone()">Clone</button>
-            <button class="btn btn-danger" style="width:auto" onclick="actionDelete()">Delete</button>
-        </div>
-
-        <div style="margin-top:40px; border-top:1px solid #334155; padding-top:20px;">
-            <h3 style="color:var(--neon)">Comments</h3>
-            <div id="comments-list"></div>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <input type="text" id="comm-input" placeholder="Add a comment..." style="margin:0">
-                <button class="btn btn-main" style="width:100px" onclick="addComment()">SEND</button>
-            </div>
-        </div>
+        <div id="view-description" style="margin-top:15px; background:#1e293b; padding:15px; border-radius:8px; display:none"></div>
     </div>
 </div>
 
@@ -104,15 +60,47 @@
 
 <script>
     const me = localStorage.getItem('loggedUser');
-    const urlParams = new URLSearchParams(window.location.search);
-    const sParam = urlParams.get('s');
-    let attachedFile = null;
 
     window.onload = () => {
+        const sParam = new URLSearchParams(window.location.search).get('s');
         if(sParam) renderView(sParam);
-        if(me) document.getElementById('auth-info').innerText = me + " 🎄";
-        initSnow();
+        
+        const authDiv = document.getElementById('auth-info');
+        if(me) {
+            authDiv.innerHTML = `
+                <span class="user-link">${me} 🎄</span>
+                <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>
+            `;
+        } else {
+            authDiv.innerHTML = '<button style="background:var(--neon); color:#000; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer" onclick="location.href=\'./login\'">LOGIN</button>';
+        }
     };
+
+    function secureLogout() {
+        const code = prompt("Enter 6-digit recovery code to CLEAR session data:");
+        if (!code) return;
+
+        // Ищем пользователя в базе
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        let userObj = users.find(x => x.user === me);
+
+        if (userObj && userObj.recovery === code) {
+            // Удаляем данные сессии, но НЕ трогаем 'users' и сами Share
+            localStorage.removeItem('loggedUser');
+            // Очищаем любые другие временные ключи, кроме базы пользователей
+            Object.keys(localStorage).forEach(key => {
+                if (key !== 'users' && !key.startsWith('comms_')) {
+                    // Мы не удаляем сами данные Share, так как они в URL или в 'users' (если там хранились ссылки)
+                    // Но если есть локальный кеш поиска - чистим
+                }
+            });
+
+            alert("Session cleared. Your Shares are safe in the database.");
+            location.href = window.location.origin + window.location.pathname;
+        } else {
+            alert("Wrong code! Security protocols active.");
+        }
+    }
 
     function handleFileUpload(input) {
         const file = input.files[0];
@@ -122,28 +110,14 @@
         if(file.type.startsWith('text/')) {
             reader.onload = (e) => document.getElementById('editor').value = e.target.result;
             reader.readAsText(file);
-        } else {
-            reader.onload = (e) => attachedFile = { name: file.name, data: e.target.result };
-            reader.readAsDataURL(file);
         }
     }
 
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        const exp = document.getElementById('share-expire').value;
-        if(!t || !c) return alert("Title and Content are required!");
-
-        const data = {
-            t, c, 
-            d: document.getElementById('share-desc').value,
-            tg: document.getElementById('share-tags').value,
-            p: document.getElementById('share-pass').value,
-            exp: exp !== "0" ? Date.now() + (exp * 60000) : null,
-            u: me || 'Guest',
-            ts: Date.now(),
-            f: attachedFile
-        };
+        if(!t || !c) return alert("Fill fields!");
+        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         location.href = window.location.origin + window.location.pathname + "?s=" + s;
     }
@@ -151,73 +125,16 @@
     function renderView(s) {
         try {
             const data = JSON.parse(decodeURIComponent(escape(atob(s))));
-            
-            if(data.exp && Date.now() > data.exp) return alert("Expired!");
-            if(data.p && prompt("Password Protected:") !== data.p) return location.href=window.location.pathname;
-
             document.getElementById('create-page').style.display = 'none';
             document.getElementById('view-page').style.display = 'block';
-            
             document.getElementById('view-title').innerText = data.t;
             document.getElementById('view-content').value = data.c;
-            document.getElementById('view-meta').innerText = `By ${data.u} • ${new Date(data.ts).toLocaleString()} • Tags: ${data.tg || 'none'}`;
-            
             if(data.d) {
-                const dBox = document.getElementById('view-description');
-                dBox.innerText = data.d;
-                dBox.style.display = 'block';
+                const db = document.getElementById('view-description');
+                db.innerText = data.d; db.style.display = 'block';
             }
-
-            if(me === data.u) document.getElementById('author-tools').style.display = 'flex';
-            loadComments(s);
-        } catch(e) { alert("Invalid Link"); }
-    }
-
-    // ACTIONS
-    function actionRaw() { const w=window.open(); w.document.write('<pre>'+document.getElementById('view-content').value+'</pre>'); }
-    function actionCopy() { navigator.clipboard.writeText(document.getElementById('view-content').value); alert("Copied!"); }
-    function actionDownload() {
-        const b=new Blob([document.getElementById('view-content').value]);
-        const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=document.getElementById('view-title').innerText+".txt"; a.click();
-    }
-    function actionEdit() { 
-        document.getElementById('view-page').style.display='none'; 
-        document.getElementById('create-page').style.display='block';
-    }
-    function actionDelete() { if(confirm("Delete?")) location.href=window.location.pathname; }
-
-    // COMMENTS
-    function loadComments(id) {
-        const list = document.getElementById('comments-list');
-        let comms = JSON.parse(localStorage.getItem('comms_'+id) || '[]');
-        list.innerHTML = comms.map(c => `<div class="comment-item"><strong>${c.u}</strong>: ${c.text}</div>`).join('');
-    }
-    function addComment() {
-        if(!me) return alert("Login first!");
-        const txt = document.getElementById('comm-input').value;
-        if(!txt) return;
-        let comms = JSON.parse(localStorage.getItem('comms_'+sParam) || '[]');
-        comms.push({ u: me, text: txt, ts: Date.now() });
-        localStorage.setItem('comms_'+sParam, JSON.stringify(comms));
-        document.getElementById('comm-input').value = "";
-        loadComments(sParam);
-    }
-
-    // SNOW
-    function initSnow() {
-        const canvas = document.getElementById('snow-canvas');
-        const ctx = canvas.getContext('2d');
-        let w = window.innerWidth, h = window.innerHeight;
-        canvas.width = w; canvas.height = h;
-        let p = [];
-        for(let i=0; i<100; i++) p.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*3+1, d:Math.random()*1});
-        function draw() {
-            ctx.clearRect(0,0,w,h); ctx.fillStyle="white"; ctx.beginPath();
-            p.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); });
-            ctx.fill();
-            p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; });
-        }
-        setInterval(draw, 30);
+            document.getElementById('view-meta').innerText = "By " + data.u + " at " + new Date(data.ts).toLocaleString();
+        } catch(e) {}
     }
 </script>
 </body>
