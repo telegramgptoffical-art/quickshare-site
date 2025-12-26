@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>QuickShare NY 2026</title><style>body { background: radial-gradient(circle, #0a192f, #020617); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; } header { background: rgba(255,255,255,0.05); width: 100%; padding: 20px; text-align: center; border-bottom: 1px solid #1e293b; } .container { width: 90%; max-width: 800px; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #334155; } textarea { width: 100%; height: 300px; background: #020617; color: #00ff88; border: 1px solid #1e293b; border-radius: 5px; padding: 10px; box-sizing: border-box; } .toolbar { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; } .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 11px; } .btn-main { background: #00ff88; color: #020617; } .btn-sec { background: #1e293b; color: white; border: 1px solid #334155; } #share-tools { display: none; } .user-info { margin-bottom: 10px; font-size: 12px; text-align: right; color: #00ff88; }</style></head>
+<body><header><h1>❄️ QUICKSHARE ❄️</h1></header><div class="container"><div class="user-info" id="userDisplay"></div><textarea id="editor" placeholder="Write something..."></textarea><div id="create-tools" class="toolbar"><button class="btn btn-main" onclick="publish()">PUBLISH</button></div><div id="share-tools" class="toolbar"><button class="btn btn-sec" onclick="copyText()">COPY</button><button class="btn btn-sec" onclick="downloadFile()">DOWNLOAD</button><button class="btn btn-sec" onclick="openRaw()">RAW</button><button class="btn btn-sec" style="background:#7f1d1d" onclick="clearEditor()">CLEAR</button></div></div>
+<script>
+    const user = localStorage.getItem('loggedUser');
+    if (!user) window.location.href = './login';
+    document.getElementById('userDisplay').innerText = 'User: ' + user;
+    function publish() { document.getElementById('create-tools').style.display = 'none'; document.getElementById('share-tools').style.display = 'flex'; document.getElementById('editor').readOnly = true; }
+    function copyText() { navigator.clipboard.writeText(document.getElementById('editor').value); alert('Copied!'); }
+    function clearEditor() { if(confirm('Clear?')) document.getElementById('editor').value = ''; }
+    function openRaw() { const w = window.open(); w.document.write('<pre>'+document.getElementById('editor').value+'</pre>'); }
+    function downloadFile() { const blob = new Blob([document.getElementById('editor').value], {type: 'text/plain'}); const a = document.createElement('a'); a.download = 'share.txt'; a.href = URL.createObjectURL(blob); a.click(); }
+</script></body></html>
