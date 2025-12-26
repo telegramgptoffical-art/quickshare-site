@@ -8,8 +8,9 @@
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
         .garland { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; }
+        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
         header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 101; }
-        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 1px dashed var(--neon); padding: 2px 5px; }
+        .user-link { color: var(--neon); font-weight: bold; cursor: pointer; text-decoration: none; border-bottom: 1px dashed var(--neon); }
         .logout-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; font-weight: bold; }
         .container { max-width: 850px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
         textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
@@ -17,17 +18,15 @@
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
-        
-        /* MODAL STYLE */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
         .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: center; min-width: 300px; }
-        
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div class="garland"></div>
+<canvas id="snow-canvas"></canvas>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:24px; cursor:pointer" onclick="location.href=window.location.origin + window.location.pathname">❄️ QUICKSHARE</div>
@@ -54,26 +53,15 @@
         </div>
         <textarea id="editor" placeholder="Write something..."></textarea>
         <input type="text" id="share-desc" placeholder="Description (Optional)">
-        <input type="text" id="share-tags" placeholder="Tags (Optional)">
-        
         <div class="settings-grid">
             <input type="password" id="share-pass" placeholder="Password (Optional)">
             <input type="datetime-local" id="share-expire">
         </div>
-
         <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
             <label style="font-size:13px; cursor:pointer; color:white;" for="captcha-in">QuickCaptcha</label>
         </div>
-
         <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
-    </div>
-
-    <div class="container" id="view-page" style="display:none">
-        <h2 id="view-title" style="color:var(--neon); margin:0;"></h2>
-        <div id="view-meta" style="font-size:12px; color:#64748b; margin:10px 0;"></div>
-        <textarea id="view-content" readonly></textarea>
-        <div id="view-description" style="margin-top:15px; background:#1e293b; padding:15px; border-radius:8px; display:none; border-left: 4px solid var(--neon);"></div>
     </div>
 </div>
 
@@ -83,57 +71,56 @@
     const me = localStorage.getItem('loggedUser');
 
     window.onload = () => {
-        const sParam = new URLSearchParams(window.location.search).get('s');
-        if(sParam) renderView(sParam);
-        
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = `
-                <span class="user-link" onclick="showStats()">${me} 🎄</span>
-                <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>
-            `;
+            authDiv.innerHTML = `<span class="user-link" onclick="showStats()">${me} 🎄</span>
+                                 <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>`;
         } else {
-            authDiv.innerHTML = '<button style="background:var(--neon); border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer" onclick="location.href=\'./login\'">LOGIN</button>';
+            authDiv.innerHTML = '<button class="btn-main" style="width:auto; padding:8px 15px;" onclick="location.href=\'./login\'">LOGIN</button>';
         }
+        initSnow();
     };
 
+    function initSnow() {
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let w = window.innerWidth, h = window.innerHeight;
+        canvas.width = w; canvas.height = h;
+        let p = [];
+        for(let i=0; i<100; i++) p.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*3+1, d:Math.random()*1});
+        function draw() {
+            ctx.clearRect(0,0,w,h); ctx.fillStyle="white"; ctx.beginPath();
+            p.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); });
+            ctx.fill();
+            p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; f.x += Math.sin(f.y/30); });
+        }
+        setInterval(draw, 30);
+    }
+
     function showStats() {
-        // Симуляция статистики (в реальном приложении данные берутся из БД)
-        document.getElementById('stats-user').innerText = "Logged in as: " + me;
-        document.getElementById('stats-count').innerText = "Account Level: Active Contributor";
+        document.getElementById('stats-user').innerText = "User: " + me;
+        document.getElementById('stats-count').innerText = "Status: Online ❄️";
         document.getElementById('statsModal').style.display = 'flex';
     }
 
     function secureLogout() {
-        const code = prompt("Enter 6-digit recovery code to logout:");
+        const code = prompt("Enter 6-digit recovery code:");
         if (!code) return;
         let users = JSON.parse(localStorage.getItem('users') || '[]');
         let userObj = users.find(x => x.user === me);
         if (userObj && userObj.recovery === code) {
             localStorage.removeItem('loggedUser');
-            location.href = window.location.origin + window.location.pathname;
-        } else { alert("Invalid code!"); }
+            location.reload();
+        } else { alert("Wrong code!"); }
     }
 
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Fill required fields!");
-        const data = { t, c, d: document.getElementById('share-desc').value, tg: document.getElementById('share-tags').value, p: document.getElementById('share-pass').value, exp: document.getElementById('share-expire').value ? new Date(document.getElementById('share-expire').value).getTime() : null, u: me || 'Guest', ts: Date.now() };
+        if(!t || !c) return alert("Fill Title and Content!");
+        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         location.href = window.location.origin + window.location.pathname + "?s=" + s;
-    }
-
-    function renderView(s) {
-        try {
-            const data = JSON.parse(decodeURIComponent(escape(atob(s))));
-            document.getElementById('create-page').style.display = 'none';
-            document.getElementById('view-page').style.display = 'block';
-            document.getElementById('view-title').innerText = data.t;
-            document.getElementById('view-content').value = data.c;
-            if(data.d) { const db = document.getElementById('view-description'); db.innerText = data.d; db.style.display = 'block'; }
-            document.getElementById('view-meta').innerText = "By " + data.u + " • Tags: " + (data.tg || 'none');
-        } catch(e) {}
     }
 
     function handleFileUpload(input) {
