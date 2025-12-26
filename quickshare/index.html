@@ -24,7 +24,6 @@
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
         
         #fun-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--neon); color: #000; padding: 25px; border-radius: 15px; font-weight: bold; z-index: 20000; display: none; box-shadow: 0 0 50px var(--neon); text-align: center; font-size: 18px; }
-
         footer { text-align: center; padding: 30px; color: #475569; font-size: 11px; }
     </style>
 </head>
@@ -35,11 +34,17 @@
 <div id="fun-msg">We Agree, but we want to make the service fun!</div>
 
 <header>
-    <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.pathname">❄️ QUICKSHARE</div>
+    <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.origin + window.location.pathname">❄️ QUICKSHARE</div>
     <div id="auth-info"></div>
 </header>
 
 <div id="page-content">
+    <div class="container" id="view-page" style="display:none">
+        <h2 id="view-title" style="color:var(--neon); margin:0;"></h2>
+        <div id="view-meta" style="font-size:12px; color:#64748b; margin-bottom:15px;"></div>
+        <textarea id="view-content" readonly></textarea>
+    </div>
+
     <div class="container" id="create-page">
         <input type="text" id="share-title" placeholder="Filename / Title *">
         <textarea id="editor" placeholder="Paste your content here..."></textarea>
@@ -62,24 +67,13 @@
     <div class="container" id="profile-page" style="display:none">
         <div style="text-align:center;">
             <h1 id="p-user-name" style="font-size:32px; margin:0;"></h1>
-            <div id="guest-switcher" style="color:var(--blue); font-size:13px; cursor:pointer; text-decoration:underline; margin:10px 0;" onclick="viewAsGuest(true)">See how Guests see your profile!</div>
             <button id="back-to-real" class="btn btn-main" style="display:none; width:auto; margin:10px auto;" onclick="viewAsGuest(false)">Poor Guests</button>
         </div>
-        
-        <div id="stats-container">
-            <div class="grid" style="margin: 20px 0; grid-template-columns: repeat(3, 1fr); text-align: center;">
-                <div style="background:#1e293b; padding:15px; border-radius:10px;">
-                    <span id="stat-shares" style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Shares</small>
-                </div>
-                <div style="background:#1e293b; padding:15px; border-radius:10px;">
-                    <span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Comments</small>
-                </div>
-                <div style="background:#1e293b; padding:15px; border-radius:10px;">
-                    <span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Views</small>
-                </div>
-            </div>
+        <div id="stats-container" class="grid" style="margin: 20px 0; grid-template-columns: repeat(3, 1fr); text-align: center;">
+            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span id="stat-shares" style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Shares</small></div>
+            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Comments</small></div>
+            <div style="background:#1e293b; padding:15px; border-radius:10px;"><span style="font-size:20px; color:var(--neon); font-weight:bold;">0</span><br><small>Views</small></div>
         </div>
-
         <div id="p-list"></div>
     </div>
 </div>
@@ -92,42 +86,37 @@
 
     function getBadge(u) { return u === 'admin' ? u + ' 🎄' : u; }
 
-    if(me) {
-        document.getElementById('auth-info').innerHTML = `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${getBadge(me)}</span>`;
-        document.getElementById('extra-options').style.display = 'block';
-        document.getElementById('body-tag').classList.add('logged-in-bg');
-    }
+    // Инициализация при загрузке
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sParam = urlParams.get('s');
 
-    function viewAsGuest(active) {
-        if(active) {
-            // Включаем режим гостя
-            document.getElementById('garland-obj').style.display = 'none';
-            document.getElementById('stats-container').style.display = 'none';
-            document.getElementById('guest-switcher').style.display = 'none';
-            document.getElementById('back-to-real').style.display = 'flex';
-            document.getElementById('p-user-name').innerText = me; // Гость видит просто имя без елочки
-            document.getElementById('auth-info').style.visibility = 'hidden';
-            isSnowing = false;
+        if(sParam) {
+            showView(sParam);
+        } else if(me) {
+            document.getElementById('auth-info').innerHTML = `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${getBadge(me)}</span>`;
+            document.getElementById('extra-options').style.display = 'block';
+            document.getElementById('body-tag').classList.add('logged-in-bg');
         } else {
-            // Возвращаемся к реальности
-            const msg = document.getElementById('fun-msg');
-            msg.style.display = 'block';
-            
-            setTimeout(() => {
-                msg.style.display = 'none';
-                document.getElementById('garland-obj').style.display = 'block';
-                document.getElementById('stats-container').style.display = 'block';
-                document.getElementById('guest-switcher').style.display = 'block';
-                document.getElementById('back-to-real').style.display = 'none';
-                document.getElementById('p-user-name').innerHTML = getBadge(me);
-                document.getElementById('auth-info').style.visibility = 'visible';
-                isSnowing = true;
-            }, 3000);
+            document.getElementById('auth-info').innerHTML = `<button onclick="location.href='./login'">LOGIN</button>`;
         }
+    };
+
+    function showView(s) {
+        document.getElementById('create-page').style.display = 'none';
+        document.getElementById('profile-page').style.display = 'none';
+        document.getElementById('view-page').style.display = 'block';
+        try {
+            const data = JSON.parse(decodeURIComponent(escape(atob(s))));
+            document.getElementById('view-title').innerText = data.t;
+            document.getElementById('view-content').value = data.c;
+            document.getElementById('view-meta').innerHTML = `Shared by ${getBadge(data.u)} • ${new Date(data.ts).toLocaleString()}`;
+        } catch(e) { console.error("Error decoding share"); }
     }
 
     function openProfile() {
         document.getElementById('create-page').style.display = 'none';
+        document.getElementById('view-page').style.display = 'none';
         document.getElementById('profile-page').style.display = 'block';
         document.getElementById('p-user-name').innerHTML = getBadge(me);
         
@@ -139,7 +128,7 @@
         mine.forEach(s => {
             list.innerHTML += `<div style="background:#1e293b; padding:15px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
                 <span>${s.t}</span>
-                <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="location.href='${s.url}'">OPEN</button>
+                <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="window.open('${s.url}', '_blank')">OPEN</button>
             </div>`;
         });
     }
@@ -147,6 +136,7 @@
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
+        if(!t || !c) return alert("Fill fields!");
         const data = { t, c, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         const url = window.location.origin + window.location.pathname + "?s=" + s;
@@ -156,7 +146,18 @@
         location.href = url;
     }
 
-    // Снег (останавливается при isSnowing = false)
+    function viewAsGuest(active) {
+        const msg = document.getElementById('fun-msg');
+        if(!active) {
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+                location.reload();
+            }, 3000);
+        }
+    }
+
+    // Снег
     const canvas = document.getElementById('snow-canvas');
     const ctx = canvas.getContext('2d');
     let width, height, flakes = [];
