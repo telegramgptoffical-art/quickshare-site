@@ -9,36 +9,30 @@
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
-        .search-area { background: rgba(0,0,0,0.3); padding: 8px; text-align: center; border-bottom: 1px solid #1e293b; }
-        .search-container { display: inline-flex; gap: 8px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--neon); }
-        .search-input { background: none; border: none; color: white; width: 180px; outline: none; font-size: 13px; }
-
-        header { background: rgba(0,0,0,0.8); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
         .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
+        header { background: rgba(0,0,0,0.8); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
         
-        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
-        
+        textarea { width: 100%; height: 200px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-        input, select { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; }
+        input, select { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; width: 100%; box-sizing: border-box; }
         
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
         .btn-sec { background: var(--border); color: white; }
-        
-        .action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .action-btn { padding: 8px 15px; font-size: 10px; background: var(--input-bg); border: 1px solid var(--border); color: white; border-radius: 4px; cursor: pointer; }
-        .action-btn:hover { border-color: var(--neon); }
 
+        /* Comments Style */
+        .comments-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .comment-card { background: #161e2d; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid transparent; position: relative; }
+        .comment-pinned { border-left-color: var(--gold); background: #1e2636; }
+        .comment-author { font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+        .pin-icon { color: var(--gold); font-size: 16px; }
+        .comment-text { font-size: 14px; margin-top: 5px; color: #cbd5e1; }
+        .comment-btn-pin { background: none; border: 1px solid var(--gold); color: var(--gold); padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; float: right; }
+        
         footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body id="body-tag">
-
-<div class="search-area" id="search-zone">
-    <div class="search-container">
-        <input type="text" id="globalSearch" class="search-input" placeholder="Search shares..." oninput="doSearch(this.value)">
-    </div>
-</div>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.pathname">❄️ QUICKSHARE</div>
@@ -47,42 +41,23 @@
 
 <div id="page-content">
     <div class="container" id="view-page" style="display:none">
-        <div class="action-bar" id="viewer-actions">
-            <button class="action-btn" onclick="viewRaw()">📄 Raw</button>
-            <button class="action-btn" onclick="downloadShare()">💾 Download</button>
-            <button class="action-btn" onclick="copyToClipboard()">📋 Copy</button>
-            <div id="owner-actions" style="display:inline-flex; gap:10px;"></div>
+        <h2 id="view-title" style="color: var(--neon);"></h2>
+        <textarea id="view-content" readonly style="height: 300px;"></textarea>
+        
+        <div class="comments-section">
+            <h3>Comments</h3>
+            <div id="comment-form" style="margin-bottom: 20px;">
+                <input type="text" id="comm-text" placeholder="Write a comment..." style="margin-bottom: 10px;">
+                <button class="btn btn-main" style="width: auto; padding: 8px 20px;" onclick="addComment()">Send</button>
+            </div>
+            <div id="comments-list"></div>
         </div>
-        <h2 id="view-title" style="margin: 10px 0; color: var(--neon);"></h2>
-        <div id="view-meta" style="font-size: 12px; color: #94a3b8; margin-bottom: 15px;"></div>
-        <textarea id="view-content" readonly></textarea>
     </div>
 
     <div class="container" id="create-page">
         <input type="text" id="share-title" placeholder="Filename / Title *">
-        <textarea id="editor" placeholder="Paste your content here..."></textarea>
-        
-        <div id="auth-options" style="display:none;">
-            <div class="grid">
-                <input type="text" id="tags-in" placeholder="Tags (comma separated)">
-                <input type="password" id="pass-in" placeholder="Set Password">
-            </div>
-            <div class="grid">
-                <select id="life-in">
-                    <option value="0">Life: Permanent</option>
-                    <option value="24">Life: 24 Hours</option>
-                </select>
-                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
-                    <input type="checkbox" id="captcha-in"> QuickCaptcha
-                </label>
-            </div>
-        </div>
-
-        <div class="grid">
-            <button class="btn btn-sec" onclick="document.getElementById('f-up').click()">📂 Upload File</button>
-            <input type="file" id="f-up" style="display:none" onchange="loadFile(this)">
-            <button class="btn btn-main" onclick="saveShare()">🚀 Publish Share</button>
-        </div>
+        <textarea id="editor" placeholder="Content..."></textarea>
+        <button class="btn btn-main" onclick="saveShare()" style="margin-top:15px;">🚀 Publish Share</button>
     </div>
 </div>
 
@@ -90,87 +65,82 @@
 
 <script>
     const me = localStorage.getItem('loggedUser');
-    let currentShareData = null;
+    let currentShareId = null;
 
-    // Check for share link
-    const urlParams = new URLSearchParams(window.location.search);
-    const shareRaw = urlParams.get('s');
-
-    if (shareRaw) {
-        try {
-            currentShareData = JSON.parse(decodeURIComponent(escape(atob(shareRaw))));
-            showViewer();
-        } catch(e) { console.error("Invalid share link"); }
-    }
-
-    function showViewer() {
-        document.getElementById('create-page').style.display = 'none';
-        document.getElementById('view-page').style.display = 'block';
-        document.getElementById('view-title').innerText = currentShareData.t;
-        document.getElementById('view-content').value = currentShareData.c;
-        document.getElementById('view-meta').innerText = `Shared by ${currentShareData.u} • ${new Date(currentShareData.ts).toLocaleString()}`;
-
-        if (me === currentShareData.u || me === 'admin') {
-            document.getElementById('owner-actions').innerHTML = `
-                <button class="action-btn" style="color:var(--neon)" onclick="cloneShare()">🔄 Clone</button>
-                <button class="action-btn" style="color:var(--red)" onclick="deleteShare()">🗑️ Delete</button>
-            `;
-        }
-    }
-
-    function viewRaw() {
-        const win = window.open("", "_blank");
-        win.document.write(`<pre style="white-space: pre-wrap; word-wrap: break-word;">${currentShareData.c}</pre>`);
-    }
-
-    function downloadShare() {
-        const blob = new Blob([currentShareData.c], { type: "text/plain" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `share_${currentShareData.u}.txt`;
-        a.click();
-    }
-
-    function copyToClipboard() {
-        navigator.clipboard.writeText(currentShareData.c);
-        alert("Copied to clipboard!");
-    }
-
-    function cloneShare() {
-        document.getElementById('view-page').style.display = 'none';
-        document.getElementById('create-page').style.display = 'block';
-        document.getElementById('editor').value = currentShareData.c;
-        document.getElementById('share-title').value = currentShareData.t + " (Copy)";
-        window.history.pushState({}, '', window.location.pathname);
-    }
-
-    // Auth logic
-    if(me) {
-        document.getElementById('body-tag').classList.add('logged-in-bg');
-        document.getElementById('auth-options').style.display = 'block';
+    function userBadge(n, isPinned = false) { 
+        let name = n === 'admin' ? n + ' 🎄' : n;
+        if (isPinned) name += ' <span class="pin-icon">⭐</span>';
+        return name;
     }
 
     document.getElementById('auth-info').innerHTML = me ? 
-        `<span style="font-weight:bold; cursor:pointer">${me}</span> | <button class="btn-sec" style="padding:4px 8px; font-size:10px" onclick="localStorage.removeItem('loggedUser');location.reload()">EXIT</button>` : 
-        `<button class="btn-sec" style="padding:8px 15px" onclick="location.href='./login'">LOGIN</button>`;
+        `<span style="font-weight:bold; cursor:pointer">${userBadge(me)}</span>` : 
+        `<button class="btn-sec" onclick="location.href='./login'">LOGIN</button>`;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const sParam = urlParams.get('s');
+
+    if (sParam) {
+        document.getElementById('create-page').style.display = 'none';
+        document.getElementById('view-page').style.display = 'block';
+        try {
+            const data = JSON.parse(decodeURIComponent(escape(atob(sParam))));
+            currentShareId = sParam; 
+            document.getElementById('view-title').innerText = data.t;
+            document.getElementById('view-content').value = data.c;
+            renderComments();
+        } catch(e) {}
+    }
+
+    function renderComments() {
+        const allComms = JSON.parse(localStorage.getItem('comms_' + currentShareId) || '[]');
+        // Сортировка: сначала закрепленные
+        allComms.sort((a, b) => b.pinned - a.pinned);
+        
+        const list = document.getElementById('comments-list');
+        list.innerHTML = '';
+        
+        allComms.forEach((c, idx) => {
+            const isOwner = me === 'admin' || (JSON.parse(decodeURIComponent(escape(atob(currentShareId)))).u === me);
+            const pinBtn = (isOwner && !c.pinned) ? `<button class="comment-btn-pin" onclick="pinComment(${idx})">PIN</button>` : '';
+            
+            list.innerHTML += `
+                <div class="comment-card ${c.pinned ? 'comment-pinned' : ''}">
+                    ${pinBtn}
+                    <div class="comment-author">${userBadge(c.u, c.pinned)}</div>
+                    <div class="comment-text">${c.t}</div>
+                </div>`;
+        });
+    }
+
+    function addComment() {
+        if (!me) return alert("Please login to comment");
+        const text = document.getElementById('comm-text').value;
+        if (!text) return;
+        
+        const allComms = JSON.parse(localStorage.getItem('comms_' + currentShareId) || '[]');
+        allComms.push({ u: me, t: text, pinned: false, ts: Date.now() });
+        localStorage.setItem('comms_' + currentShareId, JSON.stringify(allComms));
+        document.getElementById('comm-text').value = '';
+        renderComments();
+    }
+
+    function pinComment(idx) {
+        const allComms = JSON.parse(localStorage.getItem('comms_' + currentShareId) || '[]');
+        // Находим реальный индекс после сортировки
+        allComms.sort((a, b) => b.pinned - a.pinned);
+        allComms[idx].pinned = true;
+        localStorage.setItem('comms_' + currentShareId, JSON.stringify(allComms));
+        renderComments();
+    }
 
     function saveShare() {
         const t = document.getElementById('share-title').value;
-        if(!t) return alert("Title required!");
-        const data = { t, c: document.getElementById('editor').value, u: me || 'Guest', ts: Date.now() };
-        const url = window.location.origin + window.location.pathname + "?s=" + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        alert("Published! Your link: " + url);
-        window.location.href = url;
-    }
-
-    function loadFile(i) {
-        const f = i.files[0];
-        const r = new FileReader();
-        r.onload = (e) => { 
-            document.getElementById('editor').value = e.target.result; 
-            document.getElementById('share-title').value = f.name; 
-        };
-        r.readAsText(f);
+        const c = document.getElementById('editor').value;
+        if(!t || !c) return alert("Title and Content required!");
+        const data = { t, c, u: me || 'Guest', ts: Date.now() };
+        const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        location.href = window.location.pathname + "?s=" + s;
     }
 </script>
 </body>
