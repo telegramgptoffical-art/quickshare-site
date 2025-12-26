@@ -3,201 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickShare PRO - Search & Tags</title>
+    <title>QuickShare PRO - Restricted Guest Mode</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --error: #ef4444; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --gray: #475569; }
         body { background: radial-gradient(circle, #0a192f, var(--bg)); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; padding-bottom: 50px; }
-        header { background: rgba(0,0,0,0.6); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; backdrop-filter: blur(10px); sticky; top: 0; z-index: 100; }
+        header { background: rgba(0,0,0,0.6); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; backdrop-filter: blur(10px); }
         .container { max-width: 900px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 15px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        textarea { width: 100%; height: 300px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: 'Consolas', monospace; border-radius: 8px; font-size: 14px; outline: none; }
-        textarea:focus { border-color: var(--neon); }
+        textarea { width: 100%; height: 300px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 15px; box-sizing: border-box; font-family: 'Consolas', monospace; border-radius: 8px; outline: none; }
         .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--neon); background: #26334d; }
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 12px; }
+        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 12px; border-radius: 6px; outline: none; }
+        input:disabled { opacity: 0.5; cursor: not-allowed; background: #0f172a; border-color: #1e293b; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 11px; }
         .btn-main { background: var(--neon); color: #020617; }
-        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,255,136,0.3); }
         .btn-sec { background: #334155; color: white; }
-        .search-box { margin-bottom: 20px; width: 100%; position: relative; }
-        .search-box input { width: 100%; box-sizing: border-box; padding-left: 40px; border-radius: 25px; border: 1px solid var(--neon); }
-        .history-list { display: flex; flex-direction: column; gap: 10px; }
+        .btn:disabled { background: #1e293b; color: var(--gray); cursor: not-allowed; border: 1px solid #334155; }
+        .lock-hint { font-size: 10px; color: #facc15; display: block; margin-top: -10px; margin-bottom: 10px; }
+        .history-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .share-card { background: #1e293b; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--neon); }
         .tag-pill { background: rgba(0,255,136,0.1); color: var(--neon); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 5px; border: 1px solid var(--neon); }
         .share-view { display: none; }
-        .badge-guest { color: #facc15; font-size: 10px; text-transform: uppercase; border: 1px solid #facc15; padding: 1px 4px; border-radius: 3px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="color:var(--neon); font-weight:bold; font-size:20px; letter-spacing: 1px;" onclick="location.href='./'" style="cursor:pointer">❄️ QUICKSHARE PRO</div>
+    <div style="color:var(--neon); font-weight:bold; font-size:20px; cursor:pointer" onclick="location.href='./'">❄️ QUICKSHARE PRO</div>
     <div id="auth-box"></div>
 </header>
 
 <div class="container" id="main-ui">
     <div class="grid-inputs">
-        <input type="text" id="share-title" placeholder="Filename / Title *">
-        <input type="text" id="share-tags" placeholder="Tags (e.g. script, news, test)">
+        <input type="text" id="share-title" placeholder="Title *">
+        <input type="text" id="share-tags" placeholder="Tags (comma separated)">
     </div>
     
-    <textarea id="editor" placeholder="Write code or text..."></textarea>
+    <textarea id="editor" placeholder="Write something..."></textarea>
     
-    <div class="grid-inputs" style="margin-top:15px;">
-        <input type="password" id="share-pass" placeholder="Password Protection">
-        <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
-        <button class="btn btn-sec" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
-        <button class="btn btn-main" onclick="generateShare()">🚀 Publish Share</button>
+    <div class="grid-inputs" style="margin-top:20px;">
+        <div>
+            <input type="password" id="share-pass" placeholder="Password (Users Only)" style="width:100%; box-sizing:border-box;">
+            <span id="pass-hint" class="lock-hint" style="display:none">⚠️ Login to enable password</span>
+        </div>
+        <div>
+            <button class="btn btn-sec" id="btn-upload" style="width:100%" onclick="document.getElementById('file-upload').click()">📂 Upload File</button>
+            <span id="file-hint" class="lock-hint" style="display:none">⚠️ Login to upload files</span>
+            <input type="file" id="file-upload" style="display:none" onchange="handleFileUpload(this)">
+        </div>
     </div>
+    
+    <button class="btn btn-main" style="width:100%" onclick="generateShare()">🚀 Publish Share</button>
 
     <div style="margin-top:40px;">
-        <div class="search-box">
-            <span style="position:absolute; left:15px; top:12px;">🔍</span>
-            <input type="text" id="searchInput" placeholder="Search by title or #tags..." oninput="filterHistory()">
-        </div>
-        <h3>My Dashboard</h3>
+        <h3>My Recent Shares</h3>
         <div id="historyList" class="history-list"></div>
     </div>
 </div>
 
 <div class="container share-view" id="view-ui">
-    <div style="display:flex; justify-content:space-between; align-items:center">
-        <h2 id="view-title" style="color:var(--neon)">Title</h2>
-        <div id="view-tags"></div>
-    </div>
+    <h2 id="view-title" style="color:var(--neon)"></h2>
     <textarea id="view-editor" readonly></textarea>
     <div class="grid-inputs" style="margin-top:15px;">
-        <button class="btn btn-sec" onclick="copyViewText()">📋 Copy Text</button>
-        <button class="btn btn-sec" onclick="downloadViewText()">💾 Download .txt</button>
-        <button class="btn btn-main" onclick="location.href='./'">🆕 Create New</button>
+        <button class="btn btn-sec" onclick="copyViewText()">📋 Copy</button>
+        <button class="btn btn-sec" onclick="downloadViewText()">💾 Download</button>
+        <button class="btn btn-main" onclick="location.href='./'">🆕 New</button>
     </div>
 </div>
 
 <script>
     const user = localStorage.getItem('loggedUser');
     const authBox = document.getElementById('auth-box');
+    const passInput = document.getElementById('share-pass');
+    const uploadBtn = document.getElementById('btn-upload');
 
+    // Настройка доступа
     if(user) {
-        authBox.innerHTML = `<span>Welcome, <b>${user}</b></span> <button class="btn btn-sec" style="margin-left:15px" onclick="logout()">Logout</button>`;
+        authBox.innerHTML = `<span>${user}</span> | <button class="btn btn-sec" onclick="logout()">Logout</button>`;
     } else {
-        authBox.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">Login</button> <button class="btn btn-main" style="margin-left:10px" onclick="location.href='./signup'">Sign Up</button>`;
+        authBox.innerHTML = `<button class="btn btn-sec" onclick="location.href='./login'">Login</button>`;
+        
+        // Ограничения для гостей
+        passInput.disabled = true;
+        document.getElementById('pass-hint').style.display = 'block';
+        
+        uploadBtn.disabled = true;
+        document.getElementById('file-hint').style.display = 'block';
     }
 
     function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
 
     function handleFileUpload(input) {
+        if(!user) return;
         const file = input.files[0];
         const reader = new FileReader();
-        if (file.type.match('text.*') || file.name.match(/\.(py|js|css|html|sh|json|php|txt)$/)) {
-            reader.onload = (e) => { 
-                document.getElementById('editor').value = e.target.result;
-                document.getElementById('share-title').value = file.name;
-            };
-            reader.readAsText(file);
-        } else {
-            alert("This file type is not text. Only code/text can be extracted.");
-        }
+        reader.onload = (e) => { 
+            document.getElementById('editor').value = e.target.result;
+            document.getElementById('share-title').value = file.name;
+        };
+        reader.readAsText(file);
     }
 
     function generateShare() {
         const title = document.getElementById('share-title').value;
         const text = document.getElementById('editor').value;
-        const tags = document.getElementById('share-tags').value.split(',').map(t => t.trim()).filter(t => t);
-        const pass = document.getElementById('share-pass').value;
-
-        if(!title) return alert("Title is mandatory!");
+        if(!title) return alert("Title required!");
 
         const data = {
             t: title,
-            tags: tags,
             c: text,
-            p: pass,
+            p: user ? document.getElementById('share-pass').value : '',
             ts: Date.now(),
             u: user || 'Guest'
         };
 
         const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        const shareLink = window.location.origin + window.location.pathname + "?s=" + encoded;
+        const link = window.location.origin + window.location.pathname + "?s=" + encoded;
 
-        // Сохраняем в историю браузера (в localStorage)
         let history = JSON.parse(localStorage.getItem('qs_history') || '[]');
-        history.push({ ...data, url: shareLink });
+        history.push({ ...data, url: link });
         localStorage.setItem('qs_history', JSON.stringify(history));
 
-        prompt("SUCCESS! Copy your link:", shareLink);
+        prompt("Share Link:", link);
         loadHistory();
     }
 
     function loadHistory() {
-        const history = JSON.parse(localStorage.getItem('qs_history') || '[]');
-        renderList(history);
-    }
-
-    function renderList(items) {
         const list = document.getElementById('historyList');
-        list.innerHTML = items.length ? '' : '<p style="color:#666">No shares found.</p>';
-        
-        items.slice().reverse().forEach(item => {
-            const isOld = (item.u === 'Guest' && (Date.now() - item.ts > 72*3600*1000));
-            if(isOld) return; // Не показываем просроченные
-
-            const tagHtml = (item.tags || []).map(t => `<span class="tag-pill">#${t}</span>`).join('');
-            
+        const history = JSON.parse(localStorage.getItem('qs_history') || '[]');
+        list.innerHTML = '';
+        history.slice().reverse().forEach(item => {
             const card = document.createElement('div');
             card.className = 'share-card';
-            card.innerHTML = `
-                <div>
-                    <div style="font-weight:bold">${item.t} ${item.u === 'Guest' ? '<span class="badge-guest">72H</span>' : ''}</div>
-                    <div style="margin-top:5px">${tagHtml}</div>
-                </div>
-                <button class="btn btn-sec" onclick="window.location.href='${item.url}'">Open</button>
-            `;
+            card.innerHTML = `<div>${item.t}</div> <button class="btn btn-sec" onclick="location.href='${item.url}'">Open</button>`;
             list.appendChild(card);
         });
     }
 
-    function filterHistory() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const history = JSON.parse(localStorage.getItem('qs_history') || '[]');
-        
-        const filtered = history.filter(item => {
-            const inTitle = item.t.toLowerCase().includes(query);
-            const inTags = (item.tags || []).some(t => t.toLowerCase().includes(query));
-            return inTitle || inTags;
-        });
-        
-        renderList(filtered);
-    }
-
-    // Обработка входящей ссылки
+    // Обработка ссылки (View Mode)
     const urlParams = new URLSearchParams(window.location.search);
     if(urlParams.has('s')) {
         document.getElementById('main-ui').style.display = 'none';
         document.getElementById('view-ui').style.display = 'block';
+        const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
         
-        try {
-            const data = JSON.parse(decodeURIComponent(escape(atob(urlParams.get('s')))));
-            
-            if(data.p) {
-                let pass = prompt("Enter Password:");
-                if(pass !== data.p) {
-                    alert("Wrong password!");
-                    location.href = './';
-                }
-            }
-
-            document.getElementById('view-title').innerText = data.t;
-            document.getElementById('view-editor').value = data.c;
-            document.getElementById('view-tags').innerHTML = (data.tags || []).map(t => `<span class="tag-pill">#${t}</span>`).join('');
-        } catch(e) { console.error(e); }
+        if(data.p) {
+            if(prompt("Password:") !== data.p) { alert("Wrong!"); location.href='./'; }
+        }
+        document.getElementById('view-title').innerText = data.t;
+        document.getElementById('view-editor').value = data.c;
     }
 
     function copyViewText() { navigator.clipboard.writeText(document.getElementById('view-editor').value); alert("Copied!"); }
     function downloadViewText() {
         const blob = new Blob([document.getElementById('view-editor').value], {type: 'text/plain'});
         const a = document.createElement('a');
-        a.download = document.getElementById('view-title').innerText + ".txt";
-        a.href = URL.createObjectURL(blob);
-        a.click();
+        a.download = "share.txt"; a.href = URL.createObjectURL(blob); a.click();
     }
 
     loadHistory();
