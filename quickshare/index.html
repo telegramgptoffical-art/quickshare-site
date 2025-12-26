@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QUICKSHARE</title>
     <style>
-        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; --gold: #ffd700; --blue: #3b82f6; }
+        :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; --gold: #ffd700; --blue: #3b82f6; --input-bg: #1e293b; --border: #334155; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
         .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
@@ -16,21 +16,22 @@
         .search-area { background: rgba(0,0,0,0.3); padding: 8px; text-align: center; border-bottom: 1px solid #1e293b; }
         .search-container { display: inline-flex; gap: 8px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--neon); }
         .search-input { background: none; border: none; color: white; width: 180px; outline: none; font-size: 13px; }
-        .search-err { color: var(--red); font-size: 11px; margin-top: 4px; height: 14px; opacity: 0; transition: 0.3s; }
+        .search-err { color: var(--red); font-size: 11px; margin-top: 4px; height: 14px; opacity: 0; transition: 0.3s; font-weight: bold; }
 
         header { background: rgba(0,0,0,0.8); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
-        .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid #334155; position: relative; z-index: 10; }
+        .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
         
-        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; }
+        textarea { width: 100%; height: 320px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        input, select { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; }
         
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
-        .btn-sec { background: #334155; color: white; }
+        .btn-sec { background: var(--border); color: white; }
         
-        /* Stats */
         .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .stat-item { background: #1e293b; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-item { background: var(--input-bg); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .stat-val { font-size: 20px; font-weight: bold; color: var(--neon); display: block; }
         .stat-lbl { font-size: 10px; color: #94a3b8; }
 
@@ -41,19 +42,16 @@
 <body id="body-tag">
 
 <div id="guest-mode-ui" class="guest-banner">
-    GUEST VIEW MODE ACTIVE | <button class="btn btn-sec" style="padding:4px 10px; font-size:10px;" onclick="location.reload()">Back to my account!</button>
+    GUEST VIEW MODE ACTIVE | <button class="btn btn-sec" style="padding:4px 10px; font-size:10px; display:inline-flex;" onclick="location.reload()">Back to my account!</button>
 </div>
 
 <div class="search-area" id="search-zone">
     <div class="search-container">
-        <input type="text" id="globalSearch" placeholder="Search shares..." oninput="doSearch(this.value)">
+        <input type="text" id="globalSearch" class="search-input" placeholder="Search shares..." oninput="doSearch(this.value)">
         <button id="modeBtn" class="btn btn-sec" style="padding:4px 10px; border-radius:15px; font-size:9px;" onclick="swapMode()">TITLE NAME</button>
     </div>
     <div id="search-error" class="search-err">Nothing found!</div>
 </div>
-
-<div class="garland" id="garland"></div>
-<canvas id="snow-canvas"></canvas>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.reload()">❄️ QUICKSHARE</div>
@@ -62,24 +60,29 @@
 
 <div id="page-content">
     <div class="container" id="create-page">
-        <input type="text" id="share-title" placeholder="Filename / Title *" style="width:100%; padding:10px; margin-bottom:12px; background:#1e293b; border:1px solid #334155; color:white; border-radius:6px;">
+        <input type="text" id="share-title" placeholder="Filename / Title *" style="margin-bottom:12px;">
         <textarea id="editor" placeholder="Write something..."></textarea>
         
         <div id="auth-options" style="display:none;">
             <div class="grid">
                 <input type="text" id="tags-in" placeholder="Tags (comma separated)">
-                <input type="password" id="pass-in" placeholder="Password">
+                <input type="password" id="pass-in" placeholder="Set Password">
             </div>
             <div class="grid">
-                <select id="life-in"><option value="0">Permanent</option><option value="24">24 Hours</option></select>
-                <label style="display:flex; align-items:center; gap:8px; font-size:12px;"><input type="checkbox" id="captcha-in"> Captcha</label>
+                <select id="life-in">
+                    <option value="0">Life: Permanent</option>
+                    <option value="24">Life: 24 Hours</option>
+                </select>
+                <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer;">
+                    <input type="checkbox" id="captcha-in"> Enable QuickCaptcha
+                </label>
             </div>
         </div>
 
         <div class="grid">
-            <button class="btn btn-sec" onclick="document.getElementById('f-up').click()">📂 Upload</button>
+            <button class="btn btn-sec" onclick="document.getElementById('f-up').click()">📂 Upload File</button>
             <input type="file" id="f-up" style="display:none" onchange="loadFile(this)">
-            <button class="btn btn-main" onclick="saveShare()">🚀 Publish</button>
+            <button class="btn btn-main" onclick="saveShare()">🚀 Publish Share</button>
         </div>
     </div>
 
@@ -100,7 +103,7 @@
     </div>
 
     <div class="container" id="search-page" style="display:none">
-        <h3 style="color:var(--neon)">Results</h3>
+        <h3 style="color:var(--neon)">Search Results</h3>
         <div id="s-list"></div>
     </div>
 </div>
@@ -111,24 +114,23 @@
     const me = localStorage.getItem('loggedUser');
     let smode = 'title';
 
-    function userBadge(n) { return n === 'admin' ? n + ' <span style="color:#ffd700">🎄</span>' : n; }
+    function userBadge(n) { 
+        return n === 'admin' ? n + ' <span style="color:#ffd700; text-shadow: 0 0 5px #ffd700;">🎄</span>' : n; 
+    }
 
     if(me) {
         document.getElementById('body-tag').classList.add('logged-in-bg');
-        document.getElementById('garland').style.display = 'block';
         document.getElementById('auth-options').style.display = 'block';
-        initSnow();
     }
 
     document.getElementById('auth-info').innerHTML = me ? 
         `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${userBadge(me)}</span> | <button class="btn-sec" style="padding:4px 8px; font-size:10px" onclick="localStorage.removeItem('loggedUser');location.reload()">EXIT</button>` : 
-        `<button class="btn-sec" onclick="location.href='./login'">LOGIN</button>`;
+        `<button class="btn-sec" style="padding:8px 15px" onclick="location.href='./login'">LOGIN</button>`;
 
     function openProfile() {
         document.getElementById('create-page').style.display = 'none';
         document.getElementById('search-page').style.display = 'none';
         document.getElementById('profile-page').style.display = 'block';
-        
         document.getElementById('p-user-name').innerHTML = userBadge(me);
         
         const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
@@ -139,9 +141,9 @@
         document.getElementById('s-view').innerText = mine.length * 120;
 
         const list = document.getElementById('p-list');
-        list.innerHTML = mine.length ? '' : '<p>No shares created yet.</p>';
+        list.innerHTML = mine.length ? '' : '<p style="color:#475569; text-align:center;">No shares yet.</p>';
         mine.forEach(s => {
-            list.innerHTML += `<div style="background:#1e293b; padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+            list.innerHTML += `<div style="background:#1e293b; padding:12px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid var(--neon);">
                 <span>${s.t}</span>
                 <button class="btn btn-main" style="width:auto; padding:5px 10px" onclick="location.href='${s.url}'">OPEN</button>
             </div>`;
@@ -170,42 +172,26 @@
         q = q.trim().toLowerCase();
         const sPage = document.getElementById('search-page');
         const cPage = document.getElementById('create-page');
-        if(!q) { sPage.style.display='none'; cPage.style.display='block'; return; }
+        const pPage = document.getElementById('profile-page');
+        if(!q) { sPage.style.display='none'; cPage.style.display='block'; pPage.style.display='none'; return; }
         
         const all = JSON.parse(localStorage.getItem('global_shares') || '[]');
-        const found = all.filter(i => i.t.toLowerCase().includes(q));
+        let found = all.filter(i => i.t.toLowerCase().includes(q));
 
         if(found.length) {
-            cPage.style.display='none'; sPage.style.display='block';
+            cPage.style.display='none'; pPage.style.display='none'; sPage.style.display='block';
             const list = document.getElementById('s-list');
             list.innerHTML = '';
             found.forEach(f => {
-                list.innerHTML += `<div style="background:#1e293b; padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                list.innerHTML += `<div style="background:#1e293b; padding:12px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid var(--neon);">
                     <span><b>${f.t}</b> (by ${userBadge(f.u)})</span>
-                    <button class="btn btn-main" style="width:auto; padding:5px 10px" onclick="location.href='${f.url}'">OPEN</button>
+                    <button class="btn btn-main" style="width:auto; padding:5px 15px" onclick="location.href='${f.url}'">OPEN</button>
                 </div>`;
             });
         } else {
             document.getElementById('search-error').style.opacity = '1';
             setTimeout(() => document.getElementById('search-error').style.opacity = '0', 2000);
         }
-    }
-
-    function initSnow() {
-        const c = document.getElementById('snow-canvas');
-        const ctx = c.getContext('2d');
-        c.style.display = 'block';
-        let W = window.innerWidth, H = window.innerHeight;
-        c.width = W; c.height = H;
-        let flakes = Array.from({length: 40}, () => ({x: Math.random()*W, y: Math.random()*H, r: Math.random()*2+1, d: Math.random()*1}));
-        function draw() {
-            ctx.clearRect(0, 0, W, H); ctx.fillStyle = "white"; ctx.beginPath();
-            flakes.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true); });
-            ctx.fill();
-            flakes.forEach(f => { f.y += f.d + 1; if(f.y > H) f.y = -10; });
-            requestAnimationFrame(draw);
-        }
-        draw();
     }
 </script>
 </body>
