@@ -6,12 +6,14 @@
     <style>
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --border: #334155; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; text-align: center; font-size: 16px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--neon); color: #020617; transition: 0.3s; margin-top: 5px; }
+        .login-card { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e293b; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; text-align: center; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--neon); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; background: var(--neon); color: #020617; transition: 0.3s; margin-top: 5px; text-transform: uppercase; }
         .btn:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
-        .error { color: #ff4444; font-size: 13px; margin: 10px 0; min-height: 18px; }
-        .link { color: #3b82f6; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; }
+        .error { color: #ff4444; font-size: 13px; margin: 10px 0; min-height: 18px; font-weight: bold; }
+        .link { color: #3b82f6; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; opacity: 0.8; }
+        .link:hover { opacity: 1; }
         .step { display: none; }
         .active { display: block; }
     </style>
@@ -19,7 +21,7 @@
 <body>
 
 <div class="login-card">
-    <h2 id="title" style="color:var(--neon); margin-bottom: 20px;">QUICKSHARE</h2>
+    <h2 id="title" style="color:var(--neon); margin-bottom: 20px; letter-spacing: 2px;">QUICKSHARE</h2>
     
     <div id="step-auth" class="step active">
         <input type="text" id="user" placeholder="Username">
@@ -30,15 +32,16 @@
     </div>
 
     <div id="step-recovery-set" class="step">
-        <p style="font-size: 13px;">Type the 6-digit code that will be used to restore your account.</p>
-        <input type="text" id="reg-code" maxlength="6" placeholder="000000">
-        <button class="btn" onclick="finalizeRegistration()">COMPLETE</button>
+        <p style="font-size: 13px; color: #94a3b8;">Type the 6-digit code that will be used to restore your account.</p>
+        <input type="text" id="reg-code" maxlength="6" placeholder="******" style="letter-spacing: 8px; font-weight: bold;">
+        <button class="btn" onclick="finalizeRegistration()">COMPLETE REGISTRATION</button>
+        <span class="link" onclick="showStep('step-auth')">Back</span>
     </div>
 
     <div id="step-forgot" class="step">
-        <p style="font-size: 13px;">Type the 6-digit code you typed to sign-up a new account.</p>
-        <input type="text" id="recovery-user" placeholder="Your Username" style="margin-bottom:0px;">
-        <input type="text" id="recovery-code" maxlength="6" placeholder="Enter 6-digit code">
+        <p style="font-size: 13px; color: #94a3b8;">Type the 6-digit code you typed to sign-up a new account.</p>
+        <input type="text" id="recovery-user" placeholder="Your Username">
+        <input type="text" id="recovery-code" maxlength="6" placeholder="6-digit code" style="letter-spacing: 8px;">
         <button class="btn" id="restore-btn" onclick="restoreAccount()">RESTORE ACCESS</button>
         <span class="link" onclick="showStep('step-auth')">Back to Login</span>
     </div>
@@ -67,10 +70,13 @@
                 err.innerText = "Account exists!";
                 return;
             }
-            if (u.length < 3) { err.innerText = "Name too short!"; return; }
+            if (u.length < 3 || p.length < 4) { 
+                err.innerText = "Login/Pass too short!"; 
+                return; 
+            }
             tempUser = u;
             tempPass = p;
-            showStep('step-recovery-set');
+            showStep('step-recovery-set'); // Переход к обязательному вводу кода
         } else {
             const found = users.find(x => x.user === u && x.pass === p);
             if (found) {
@@ -84,17 +90,24 @@
 
     function finalizeRegistration() {
         const code = document.getElementById('reg-code').value;
+        const err = document.getElementById('err');
+        
         if (code.length !== 6 || isNaN(code)) {
-            document.getElementById('err').innerText = "Code must be 6 digits!";
+            err.innerText = "Code must be 6 digits!";
             return;
         }
 
         let users = JSON.parse(localStorage.getItem('users') || '[]');
-        users.push({ user: tempUser, pass: tempPass, recovery: code });
+        // Сохраняем всё в localStorage
+        users.push({ 
+            user: tempUser, 
+            pass: tempPass, 
+            recovery: code 
+        });
         localStorage.setItem('users', JSON.stringify(users));
         
         localStorage.setItem('loggedUser', tempUser);
-        alert("Account created! Welcome.");
+        alert("Account registered with recovery code!");
         location.href = '../';
     }
 
@@ -104,7 +117,7 @@
         const err = document.getElementById('err');
         const btn = document.getElementById('restore-btn');
 
-        // Проверка блокировки
+        // Проверка блокировки (Anti-Brute Force)
         const lockTime = localStorage.getItem('lock_' + u);
         if (lockTime && Date.now() < lockTime) {
             const remaining = Math.ceil((lockTime - Date.now()) / 1000);
@@ -118,7 +131,7 @@
         if (userObj && userObj.recovery === code) {
             localStorage.setItem('loggedUser', u);
             localStorage.removeItem('attempts_' + u);
-            alert("Identity verified! Logged in.");
+            alert("Verification successful! Welcome back.");
             location.href = '../';
         } else {
             let attempts = (parseInt(localStorage.getItem('attempts_' + u)) || 0) + 1;
@@ -127,22 +140,13 @@
             if (attempts >= 3) {
                 const lockUntil = Date.now() + (2 * 60 * 1000); // 2 минуты
                 localStorage.setItem('lock_' + u, lockUntil);
-                err.innerText = "Too many attempts! Locked for 2 min.";
+                err.innerText = "3 failed attempts! Locked for 2 min.";
                 btn.disabled = true;
-                setTimeout(() => { btn.disabled = false; }, 120000);
             } else {
-                err.innerText = "Invalid code! Attempt " + attempts + "/3";
+                err.innerText = "Invalid code! " + attempts + "/3 attempts";
             }
         }
     }
-
-    // Проверка блокировки при загрузке
-    window.onload = () => {
-        const u = document.getElementById('recovery-user').value;
-        if (localStorage.getItem('lock_' + u) > Date.now()) {
-            document.getElementById('restore-btn').disabled = true;
-        }
-    };
 </script>
 </body>
 </html>
