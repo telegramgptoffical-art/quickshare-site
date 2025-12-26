@@ -6,32 +6,37 @@
     <title>QUICKSHARE</title>
     <style>
         :root { --neon: #00ff88; --bg: #020617; --card: #0f172a; --red: #ff4444; --gold: #ffd700; --blue: #3b82f6; --input-bg: #1e293b; --border: #334155; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
         .logged-in-bg { background: radial-gradient(circle at center, #0a192f, #020617) !important; }
         
-        header { background: rgba(0,0,0,0.8); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
-        .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; }
+        /* Стили гирлянды */
+        .garland { position: fixed; top: 0; left: 0; width: 100%; height: 20px; background: url('https://www.freeiconspng.com/uploads/christmas-lights-png-20.png') repeat-x; background-size: contain; z-index: 9999; pointer-events: none; animation: flash 1.5s infinite alternate; }
+        @keyframes flash { from { opacity: 0.7; } to { opacity: 1; } }
+
+        /* Контейнер снега поверх всего */
+        #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; }
+
+        header { background: rgba(0,0,0,0.8); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 100; }
+        .container { max-width: 800px; margin: 20px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 10; }
         
-        textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; font-size: 14px; }
+        textarea { width: 100%; height: 250px; background: #000; color: var(--neon); border: 1px solid #1e293b; padding: 12px; border-radius: 8px; outline: none; box-sizing: border-box; font-family: monospace; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
         input, select { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 6px; width: 100%; box-sizing: border-box; outline: none; }
         
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--neon); color: #020617; width: 100%; }
-        .btn-sec { background: var(--border); color: white; }
-        
-        .action-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .action-btn { padding: 6px 12px; font-size: 10px; background: var(--input-bg); border: 1px solid var(--border); color: white; border-radius: 4px; cursor: pointer; }
 
-        .comments-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px; }
-        .comment-card { background: #161e2d; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid transparent; }
-        .comment-pinned { border-left-color: var(--gold); background: #1e2636; }
-        .pin-star { color: var(--gold); margin-left: 5px; }
-        
-        footer { text-align: center; padding: 30px; color: #475569; font-size: 11px; }
+        /* QuickCaptcha в строчку */
+        .captcha-box { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .captcha-box input { width: 18px; height: 18px; cursor: pointer; }
+
+        footer { text-align: center; padding: 30px; color: #475569; font-size: 11px; position: relative; z-index: 10; }
     </style>
 </head>
 <body id="body-tag">
+
+<div class="garland"></div>
+<canvas id="snow-canvas"></canvas>
 
 <header>
     <div style="color:var(--neon); font-weight:bold; font-size:22px; cursor:pointer" onclick="location.href=window.location.pathname">❄️ QUICKSHARE</div>
@@ -39,53 +44,28 @@
 </header>
 
 <div id="page-content">
-    <div class="container" id="view-page" style="display:none">
-        <div class="action-bar">
-            <button class="action-btn" onclick="viewRaw()">📄 Raw</button>
-            <button class="action-btn" onclick="downloadFile()">💾 Download</button>
-            <button class="action-btn" onclick="copyText()">📋 Copy</button>
-            <div id="owner-tools" style="display:flex; gap:10px;"></div>
-        </div>
-        <h2 id="view-title" style="color:var(--neon); margin: 0 0 10px 0;"></h2>
-        <div id="view-meta" style="font-size:12px; color:#64748b; margin-bottom:15px;"></div>
-        <textarea id="view-content" readonly></textarea>
-
-        <div class="comments-section">
-            <h3 style="font-size:16px;">Comments</h3>
-            <div id="comment-input-zone" style="margin-bottom:20px; display:none;">
-                <input type="text" id="new-comment" placeholder="Add a public comment..." style="margin-bottom:10px;">
-                <button class="btn btn-main" style="width:auto; padding:8px 20px;" onclick="postComment()">Comment</button>
-            </div>
-            <div id="comments-list"></div>
-        </div>
-    </div>
-
     <div class="container" id="create-page">
-        <input type="text" id="share-title" placeholder="Filename / Title *" style="margin-bottom:12px;">
-        <textarea id="editor" placeholder="Enter your text or code here..."></textarea>
-        
-        <div id="extra-options" style="display:none;">
+        <input type="text" id="share-title" placeholder="Filename / Title *">
+        <textarea id="editor" placeholder="Type your text here..."></textarea>
+        <div id="extra-options" style="display:none; margin-top:12px;">
             <div class="grid">
-                <input type="text" id="tags-in" placeholder="Tags (comma separated)">
-                <input type="password" id="pass-in" placeholder="Set Password (Optional)">
+                <input type="text" id="tags-in" placeholder="Tags">
+                <input type="password" id="pass-in" placeholder="Password">
             </div>
             <div class="grid">
-                <select id="life-in">
-                    <option value="0">Life: Permanent</option>
-                    <option value="24">Life: 24 Hours</option>
-                </select>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <input type="checkbox" id="captcha-in" style="width:18px; height:18px; cursor:pointer;">
-                    <label for="captcha-in" style="font-size:13px; cursor:pointer;">QuickCaptcha</label>
+                <select id="life-in"><option value="0">Life: Permanent</option></select>
+                <div class="captcha-box">
+                    <input type="checkbox" id="captcha-in">
+                    <label>QuickCaptcha</label>
                 </div>
             </div>
         </div>
+        <button class="btn btn-main" style="margin-top:15px;" onclick="saveShare()">🚀 Publish Share</button>
+    </div>
 
-        <div class="grid" style="margin-top:20px;">
-            <button class="btn btn-sec" onclick="document.getElementById('f-up').click()">📂 Upload File</button>
-            <input type="file" id="f-up" style="display:none" onchange="loadFile(this)">
-            <button class="btn btn-main" onclick="saveShare()">🚀 Publish Share</button>
-        </div>
+    <div class="container" id="profile-page" style="display:none">
+        <h1 id="p-user-name" style="text-align:center;"></h1>
+        <div id="p-list"></div>
     </div>
 </div>
 
@@ -93,122 +73,73 @@
 
 <script>
     const me = localStorage.getItem('loggedUser');
-    let currentS = new URLSearchParams(window.location.search).get('s');
+    
+    function getBadge(u) { return u === 'admin' ? u + ' 🎄' : u; }
 
-    // Отображение значков и имени
-    function getBadge(user, isPinned = false) {
-        let res = user === 'admin' ? user + ' 🎄' : user;
-        if(isPinned) res += ' <span class="pin-star">⭐</span>';
-        return res;
-    }
-
-    // Хедер и доступ к настройкам
     if(me) {
-        document.getElementById('auth-info').innerHTML = `<span style="font-weight:bold; cursor:pointer" onclick="alert('Profile logic here')">${getBadge(me)}</span> | <button onclick="localStorage.removeItem('loggedUser');location.reload()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:10px;">EXIT</button>`;
+        document.getElementById('auth-info').innerHTML = `<span style="font-weight:bold; cursor:pointer" onclick="openProfile()">${getBadge(me)}</span>`;
         document.getElementById('extra-options').style.display = 'block';
-        document.getElementById('comment-input-zone').style.display = 'block';
         document.getElementById('body-tag').classList.add('logged-in-bg');
     } else {
-        document.getElementById('auth-info').innerHTML = `<button class="btn btn-sec" style="padding:8px 15px" onclick="location.href='./login'">LOGIN</button>`;
+        document.getElementById('auth-info').innerHTML = `<button onclick="location.href='./login'">LOGIN</button>`;
     }
 
-    // Загрузка Share
-    if(currentS) {
+    function openProfile() {
         document.getElementById('create-page').style.display = 'none';
-        document.getElementById('view-page').style.display = 'block';
-        try {
-            const data = JSON.parse(decodeURIComponent(escape(atob(currentS))));
-            document.getElementById('view-title').innerText = data.t;
-            document.getElementById('view-content').value = data.c;
-            document.getElementById('view-meta').innerHTML = `Shared by ${getBadge(data.u)} • ${new Date(data.ts).toLocaleString()}`;
-            
-            if(me === data.u || me === 'admin') {
-                document.getElementById('owner-tools').innerHTML = `
-                    <button class="action-btn" style="color:var(--neon)" onclick="cloneShare()">🔄 Clone</button>
-                    <button class="action-btn" style="color:var(--red)" onclick="deleteShare()">🗑️ Delete</button>`;
-            }
-            renderComments();
-        } catch(e) { alert("Invalid link"); }
+        document.getElementById('profile-page').style.display = 'block';
+        document.getElementById('p-user-name').innerHTML = getBadge(me);
     }
 
-    // Функции Share
     function saveShare() {
         const t = document.getElementById('share-title').value;
         const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Title and Content are required!");
+        if(!t || !c) return alert("Fill all fields!");
         const data = { t, c, u: me || 'Guest', ts: Date.now() };
         const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
         location.href = window.location.pathname + "?s=" + s;
     }
 
-    function cloneShare() {
-        document.getElementById('view-page').style.display = 'none';
-        document.getElementById('create-page').style.display = 'block';
-        document.getElementById('editor').value = document.getElementById('view-content').value;
-        document.getElementById('share-title').value = "Clone of " + document.getElementById('view-title').innerText;
-        window.history.pushState({}, '', window.location.pathname);
+    // СНЕЖНЫЙ ДВИЖОК
+    const canvas = document.getElementById('snow-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, flakes = [];
+
+    function initSnow() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        flakes = [];
+        for(let i=0; i<150; i++) {
+            flakes.push({ x: Math.random()*width, y: Math.random()*height, r: Math.random()*3+1, d: Math.random()*1 });
+        }
     }
 
-    function copyText() {
-        navigator.clipboard.writeText(document.getElementById('view-content').value);
-        alert("Copied!");
+    function drawSnow() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        for(let i=0; i<flakes.length; i++) {
+            let f = flakes[i];
+            ctx.moveTo(f.x, f.y);
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true);
+        }
+        ctx.fill();
+        updateSnow();
     }
 
-    function downloadFile() {
-        const blob = new Blob([document.getElementById('view-content').value], {type: "text/plain"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "share_" + (me || "guest") + ".txt";
-        a.click();
+    function updateSnow() {
+        for(let i=0; i<flakes.length; i++) {
+            let f = flakes[i];
+            f.y += Math.pow(f.d, 2) + 1;
+            f.x += Math.sin(f.y / 50);
+            if(f.y > height) { flakes[i] = { x: Math.random()*width, y: 0, r: f.r, d: f.d }; }
+        }
     }
 
-    // Логика комментариев
-    function renderComments() {
-        const comms = JSON.parse(localStorage.getItem('comms_' + currentS) || '[]');
-        comms.sort((a, b) => b.pinned - a.pinned);
-        const list = document.getElementById('comments-list');
-        list.innerHTML = '';
-        
-        comms.forEach((c, i) => {
-            const shareOwner = JSON.parse(decodeURIComponent(escape(atob(currentS)))).u;
-            const canPin = (me === shareOwner || me === 'admin') && !c.pinned;
-            const pinHtml = canPin ? `<button onclick="pinComm(${i})" style="float:right; background:none; border:1px solid var(--gold); color:var(--gold); font-size:9px; border-radius:3px; cursor:pointer;">PIN</button>` : '';
-            
-            list.innerHTML += `
-                <div class="comment-card ${c.pinned ? 'comment-pinned' : ''}">
-                    ${pinHtml}
-                    <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">${getBadge(c.u, c.pinned)}</div>
-                    <div style="font-size:14px; color:#cbd5e1;">${c.t}</div>
-                </div>`;
-        });
-    }
-
-    function postComment() {
-        const text = document.getElementById('new-comment').value;
-        if(!text) return;
-        const comms = JSON.parse(localStorage.getItem('comms_' + currentS) || '[]');
-        comms.push({ u: me, t: text, pinned: false, ts: Date.now() });
-        localStorage.setItem('comms_' + currentS, JSON.stringify(comms));
-        document.getElementById('new-comment').value = '';
-        renderComments();
-    }
-
-    function pinComm(idx) {
-        const comms = JSON.parse(localStorage.getItem('comms_' + currentS) || '[]');
-        comms.sort((a, b) => b.pinned - a.pinned);
-        comms[idx].pinned = true;
-        localStorage.setItem('comms_' + currentS, JSON.stringify(comms));
-        renderComments();
-    }
-
-    function loadFile(input) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('editor').value = e.target.result;
-            document.getElementById('share-title').value = input.files[0].name;
-        };
-        reader.readAsText(input.files[0]);
-    }
+    window.addEventListener('resize', initSnow);
+    initSnow();
+    setInterval(drawSnow, 30);
 </script>
 </body>
 </html>
