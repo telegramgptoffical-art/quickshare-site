@@ -16,16 +16,15 @@
         textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
         textarea { height: 250px; font-family: monospace; color: var(--neon); }
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .btn-upload { background: #3b82f6; color: white; padding: 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 140px; }
+        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
         
+        /* MODAL & LIST */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 30px; border-radius: 15px; text-align: left; min-width: 320px; box-shadow: 0 0 30px rgba(0,255,136,0.3); }
-        .stat-row { display: flex; justify-content: space-between; margin: 15px 0; padding-bottom: 8px; border-bottom: 1px solid #1e293b; }
-        .stat-label { color: #94a3b8; font-size: 14px; }
-        .stat-number { color: var(--neon); font-weight: bold; font-family: monospace; font-size: 18px; }
-
-        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; width: 100%; position: absolute; bottom: 0; }
+        .modal-content { background: var(--card); border: 1px solid var(--neon); padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto; }
+        .share-item { background: #1e293b; padding: 10px; margin: 8px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        .share-item a { color: var(--neon); text-decoration: none; font-size: 13px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+        
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -40,20 +39,21 @@
 
 <div id="statsModal" class="modal">
     <div class="modal-content">
-        <h2 style="color:var(--neon); margin:0 0 20px 0; text-align:center;">User Stats 📊</h2>
-        <div class="stat-row"><span class="stat-label">Username:</span> <span class="stat-number" id="s-user"></span></div>
-        <div class="stat-row"><span class="stat-label">Shares Created:</span> <span class="stat-number" id="s-total">0</span></div>
-        <div class="stat-row"><span class="stat-label">Total Comments:</span> <span class="stat-number" id="s-comms">0</span></div>
-        <div class="stat-row"><span class="stat-label">Total Visits:</span> <span class="stat-number" id="s-views">0</span></div>
-        <button class="btn-main" style="margin-top:15px;" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
+        <h2 style="color:var(--neon); margin:0 0 15px 0; text-align:center;">My Dashboard 📊</h2>
+        <div id="stats-data" style="margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+            <div>User: <span id="s-user" style="color:var(--neon)"></span></div>
+            <div>Total Shares: <span id="s-total" style="color:var(--neon)">0</span></div>
+        </div>
+        
+        <h3 style="font-size: 14px; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 5px;">My Shares History:</h3>
+        <div id="shares-list"></div>
+        
+        <button class="btn-main" style="width:100%; background:#475569; color:white;" onclick="document.getElementById('statsModal').style.display='none'">Close</button>
     </div>
 </div>
 
 <div class="container" id="create-page">
-    <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *" style="margin:0">
-        <label class="btn-upload">📁 Upload File <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)"></label>
-    </div>
+    <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *">
     <textarea id="editor" placeholder="Type content here..."></textarea>
     <input type="text" id="share-desc" placeholder="Description (Optional)">
     <div class="settings-grid">
@@ -64,7 +64,7 @@
         <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
         <label style="font-size:13px; cursor:pointer;" for="captcha-in">QuickCaptcha</label>
     </div>
-    <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
+    <button class="btn-main" style="width:100%;" onclick="saveShare()">🚀 PUBLISH SHARE</button>
 </div>
 
 <footer>Made by GitHub Pages!</footer>
@@ -75,32 +75,32 @@
     window.onload = () => {
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = `<span class="user-link" onclick="loadRealStats()">${me} 🎄</span>
+            authDiv.innerHTML = `<span class="user-link" onclick="openDashboard()">${me} 🎄</span>
                                  <button class="logout-btn" onclick="secureLogout()">LOGOUT</button>`;
         } else {
-            authDiv.innerHTML = '<button class="btn-main" style="width:auto; padding:8px 15px;" onclick="location.href=\'./login\'">LOGIN</button>';
+            authDiv.innerHTML = '<button class="btn-main" style="padding:5px 15px;" onclick="location.href=\'./login\'">LOGIN</button>';
         }
         initSnow();
     };
 
-    function loadRealStats() {
-        // Загружаем базу данных Share из localStorage
+    function openDashboard() {
         const db = JSON.parse(localStorage.getItem('qs_database') || '[]');
-        const myData = db.filter(item => item.author === me);
-
-        let totalVisits = 0;
-        let totalComments = 0;
-
-        myData.forEach(item => {
-            totalVisits += (item.views || 0);
-            totalComments += (item.commentsCount || 0);
+        const myShares = db.filter(s => s.author === me);
+        
+        document.getElementById('s-user').innerText = me;
+        document.getElementById('s-total').innerText = myShares.length;
+        
+        const listDiv = document.getElementById('shares-list');
+        listDiv.innerHTML = myShares.length ? '' : '<p style="font-size:12px; color:#64748b;">No shares found.</p>';
+        
+        myShares.reverse().forEach(s => {
+            const item = document.createElement('div');
+            item.className = 'share-item';
+            item.innerHTML = `<a href="?s=${s.code}">📄 ${s.title}</a>
+                               <span style="font-size:10px; color:#475569;">${new Date(s.ts).toLocaleDateString()}</span>`;
+            listDiv.appendChild(item);
         });
 
-        document.getElementById('s-user').innerText = me;
-        document.getElementById('s-total').innerText = myData.length;
-        document.getElementById('s-comms').innerText = totalComments;
-        document.getElementById('s-views').innerText = totalVisits;
-        
         document.getElementById('statsModal').style.display = 'flex';
     }
 
@@ -109,25 +109,25 @@
         const c = document.getElementById('editor').value;
         if(!t || !c) return alert("Title/Content required!");
 
-        // Сохраняем в базу для статистики
+        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
+        const code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+
         let db = JSON.parse(localStorage.getItem('qs_database') || '[]');
-        db.push({ author: me || 'Guest', title: t, ts: Date.now(), views: 0, commentsCount: 0 });
+        db.push({ author: me || 'Guest', title: t, ts: Date.now(), code: code });
         localStorage.setItem('qs_database', JSON.stringify(db));
 
-        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
-        const s = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-        location.href = window.location.origin + window.location.pathname + "?s=" + s;
+        location.href = window.location.origin + window.location.pathname + "?s=" + code;
     }
 
     function secureLogout() {
-        const code = prompt("Enter 6-digit recovery code to logout:");
+        const code = prompt("Enter 6-digit recovery code:");
         if (!code) return;
         let users = JSON.parse(localStorage.getItem('users') || '[]');
         let userObj = users.find(x => x.user === me);
         if (userObj && userObj.recovery === code) {
             localStorage.removeItem('loggedUser');
             location.reload();
-        } else { alert("Wrong code!"); }
+        } else { alert("Invalid code!"); }
     }
 
     function initSnow() {
@@ -143,17 +143,6 @@
             p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; });
         }
         setInterval(draw, 30);
-    }
-
-    function handleFileUpload(input) {
-        const file = input.files[0];
-        if(!file) return;
-        document.getElementById('share-title').value = file.name;
-        const reader = new FileReader();
-        if(file.type.startsWith('text/')) {
-            reader.onload = (e) => document.getElementById('editor').value = e.target.result;
-            reader.readAsText(file);
-        }
     }
 </script>
 </body>
