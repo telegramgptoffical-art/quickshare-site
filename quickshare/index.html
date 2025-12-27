@@ -9,25 +9,20 @@
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh; overflow-x: hidden; }
         #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
         header { background: rgba(0,0,0,0.9); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); position: relative; z-index: 100; }
-        
-        .profile-trigger { background: transparent; color: var(--neon); border: 2px solid var(--neon); padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; z-index: 101; position: relative; }
-        
+        .profile-trigger { background: transparent; color: var(--neon); border: 2px solid var(--neon); padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .profile-trigger:hover { background: var(--neon); color: var(--bg); }
         .container { max-width: 850px; margin: 30px auto; padding: 25px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); position: relative; z-index: 50; }
-        
-        /* Исправленный блок заголовка и загрузки */
-        .top-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: stretch; }
-        .title-input { flex-grow: 1; margin-bottom: 0 !important; }
-        .upload-label { background: #3b82f6; color: white; padding: 0 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; white-space: nowrap; }
-
-        textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; position: relative; z-index: 51; }
-        
-        /* Исправление Expire Time */
-        input[type="datetime-local"] { color-scheme: dark; min-height: 45px; }
-        input[type="datetime-local"]::before { content: '📅 Expire: '; color: #64748b; margin-right: 5px; }
-
-        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; z-index: 52; position: relative; }
-        
-        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; z-index: 100; position: relative; }
+        .top-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .upload-label { background: #3b82f6; color: white; padding: 0 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; font-weight: bold; font-size: 13px; white-space: nowrap; }
+        textarea, input { background: #0b1120; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; }
+        textarea { height: 250px; font-family: monospace; color: var(--neon); border-left: 3px solid var(--neon); }
+        input[type="datetime-local"] { color-scheme: dark; }
+        .btn-main { background: var(--neon); color: #020617; width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal-content { background: var(--card); border: 2px solid var(--neon); padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .history-item { background: rgba(255,255,255,0.05); padding: 10px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #334155; }
+        .history-item a { color: var(--neon); text-decoration: none; font-size: 14px; font-weight: bold; }
+        footer { text-align: center; padding: 20px; color: #475569; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -39,29 +34,37 @@
     <div id="auth-info"></div>
 </header>
 
+<div id="dashboardModal" class="modal">
+    <div class="modal-content">
+        <h2 style="color:var(--neon); text-align:center; margin-top:0;">MY DASHBOARD 📊</h2>
+        <div style="background: rgba(0,255,136,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <div>User: <b id="d-user" style="color:white"></b></div>
+            <div>Shares: <b id="d-total" style="color:var(--neon)">0</b></div>
+        </div>
+        <h3 style="font-size: 14px; color: #94a3b8;">HISTORY:</h3>
+        <div id="history-container"></div>
+        <button class="btn-main" style="margin-top:20px; background:#334155; color:white;" onclick="closeDash()">CLOSE</button>
+    </div>
+</div>
+
 <div class="container">
     <div class="top-row">
-        <input type="text" id="share-title" class="title-input" maxlength="50" placeholder="Title (Max 50 chars) *">
-        <label class="upload-label">
-            📁 Upload File
-            <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
-        </label>
+        <input type="text" id="share-title" maxlength="50" placeholder="Title (Max 50 chars) *" style="margin:0">
+        <label class="upload-label">📁 Upload <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)"></label>
     </div>
-
-    <textarea id="editor" placeholder="Write or paste your content here..."></textarea>
-    
+    <textarea id="editor" placeholder="Type content here..."></textarea>
     <input type="text" id="share-desc" placeholder="Description (Optional)">
-    
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <input type="password" id="share-pass" placeholder="Password (Optional)">
-        <input type="datetime-local" id="share-expire">
+        <input type="password" id="share-pass" placeholder="Password">
+        <div>
+            <label style="font-size:10px; color:#64748b; display:block;">EXPIRE TIME:</label>
+            <input type="datetime-local" id="share-expire">
+        </div>
     </div>
-
     <div style="margin: 10px 0; display:flex; align-items:center; gap:8px;">
         <input type="checkbox" id="captcha-in" style="width:auto; margin:0"> 
-        <label style="font-size:13px; cursor:pointer;" for="captcha-in">QuickCaptcha</label>
+        <label style="font-size:13px;" for="captcha-in">QuickCaptcha</label>
     </div>
-
     <button class="btn-main" onclick="saveShare()">🚀 PUBLISH SHARE</button>
 </div>
 
@@ -73,29 +76,53 @@
     window.onload = () => {
         const authDiv = document.getElementById('auth-info');
         if(me) {
-            authDiv.innerHTML = '<button class="profile-trigger" onclick="alert(\'Dashboard opening...\')">' + me + ' 🎄</button>';
+            authDiv.innerHTML = '<button class="profile-trigger" onclick="openDashboard()">' + me + ' 🎄</button>';
         } else {
             authDiv.innerHTML = '<button class="profile-trigger" onclick="location.href=\'./login\'">LOGIN</button>';
         }
         initSnow();
     };
 
+    function openDashboard() {
+        const db = JSON.parse(localStorage.getItem('qs_database') || '[]');
+        const myData = db.filter(s => s.author === me);
+        document.getElementById('d-user').innerText = me;
+        document.getElementById('d-total').innerText = myData.length;
+        const container = document.getElementById('history-container');
+        container.innerHTML = myData.length ? '' : '<p>No history yet.</p>';
+        myData.reverse().slice(0, 5).forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'history-item';
+            el.innerHTML = '<a href="?s=' + s.code + '">📄 ' + s.title + '</a> <span>' + new Date(s.ts).toLocaleDateString() + '</span>';
+            container.appendChild(el);
+        });
+        document.getElementById('dashboardModal').style.display = 'flex';
+    }
+
+    function closeDash() { document.getElementById('dashboardModal').style.display = 'none'; }
+
+    function saveShare() {
+        const t = document.getElementById('share-title').value;
+        const c = document.getElementById('editor').value;
+        if(!t || !c) return alert("Fill Title and Content!");
+
+        const data = { t, c, d: document.getElementById('share-desc').value, u: me || 'Guest', ts: Date.now() };
+        const code = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+
+        let db = JSON.parse(localStorage.getItem('qs_database') || '[]');
+        db.push({ author: me || 'Guest', title: t, ts: Date.now(), code: code });
+        localStorage.setItem('qs_database', JSON.stringify(db));
+
+        location.href = window.location.origin + window.location.pathname + "?s=" + code;
+    }
+
     function handleFileUpload(input) {
         const file = input.files[0];
         if(!file) return;
         document.getElementById('share-title').value = file.name;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('editor').value = e.target.result;
-        };
+        reader.onload = (e) => document.getElementById('editor').value = e.target.result;
         reader.readAsText(file);
-    }
-
-    function saveShare() {
-        const t = document.getElementById('share-title').value;
-        const c = document.getElementById('editor').value;
-        if(!t || !c) return alert("Title and Content are required!");
-        alert("Publishing: " + t);
     }
 
     function initSnow() {
@@ -106,7 +133,7 @@
         let p = [];
         for(let i=0; i<80; i++) p.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*3+1, d:Math.random()*1});
         function draw() {
-            ctx.clearRect(0,0,w,h); ctx.fillStyle="rgba(255,255,255,0.8)"; ctx.beginPath();
+            ctx.clearRect(0,0,w,h); ctx.fillStyle="white"; ctx.beginPath();
             p.forEach(f => { ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); }); ctx.fill();
             p.forEach(f => { f.y += f.d + 1; if(f.y > h) f.y = -5; });
         }
